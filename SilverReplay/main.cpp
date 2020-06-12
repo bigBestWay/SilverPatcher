@@ -105,8 +105,9 @@ int main(int argc, char *argv[])
 				printf("error %d\n", tlv.tag);
 				return 1;
 			}
-			delete buf;
+			delete[] buf;
 		} while (!feof(fp));
+		fclose(fp);
 	}
 	return 0;
 }
