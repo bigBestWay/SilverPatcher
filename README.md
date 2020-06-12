@@ -28,8 +28,8 @@ make -j4
 make install
 ```
 ###dyninst 10.1.0  
-https://github.com/dyninst/dyninst/archive/v10.1.0.tar.gz
-一个非常庞大、复杂、历史悠久的库，安装起来相当费劲...  
+https://github.com/dyninst/dyninst/archive/v10.1.0.tar.gz  
+一个非常庞大、复杂、历史悠久的库，安装起来可能比较麻烦...  
 首先装一些基础库
 ```
 apt-get install cmake libblkid-dev e2fslibs-dev libboost-all-dev libaudit-dev texlive-latex-base libelf-dev libdwarf-dev libiberty-dev
