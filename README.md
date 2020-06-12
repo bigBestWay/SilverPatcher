@@ -1,18 +1,54 @@
-#SilverPatcher
+#SilverPatcher  
 一款CTF AWD二进制防御补丁工具  
-##编译安装
-Ubuntu 16.04 x64，IDE使用VS2017远程编译。
-##依赖组件
-###LIEF
-https://github.com/lief-project/LIEF
-###dyninst
+##编译安装  
+Ubuntu 16.04 x64，使用cmake编译：
+```
+cmake .
+make
+```
+##依赖组件  
+###LIEF  
+https://github.com/lief-project/LIEF  
+下载源码，编译安装
+```
+cmake .
+make -j4
+make install
+```
+###dyninst  
 https://github.com/dyninst/dyninst  
-###keystone
-https://github.com/keystone-engine/keystone
-###capstone
-https://github.com/aquynh/capstone
-###CJsonObject
-https://github.com/Bwar/CJsonObject
+一个非常庞大、复杂、历史悠久的库，安装起来相当费劲...  
+需要boost支持，编译时会主动下载  
+```
+cmake .
+make -j4
+make install
+```
+###keystone  
+https://github.com/keystone-engine/keystone  
+下载源码，编译安装
+```
+cmake .
+make -j4
+make install
+```
+###capstone  
+https://github.com/aquynh/capstone  
+下载源码，编译安装
+```
+./make.sh
+```
+###CJsonObject  
+https://github.com/Bwar/CJsonObject  
+这个工程稍微比较麻烦，因为开发者只提供了代码没有想发布链接库的意思，需要我们手工编译生成。
+```
+cd demo
+make
+cd ..
+ar crv libCJsonObject.a cJSON.o CJsonObject.o
+cp CJsonObject.hpp /usr/include
+cp libCJsonObject.a /usr/lib
+```
 ##使用
 通过修改config.json配置文件，选择想要使用的策略。
 ```
