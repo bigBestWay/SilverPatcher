@@ -7,18 +7,34 @@ cmake .
 make
 ```
 ##依赖组件  
-###LIEF  
+###CMake  
+```
+apt install cmake
+```
+###LIEF 0.10.1  
 https://github.com/lief-project/LIEF  
-下载源码，编译安装
+直接下载已编译好的SDK包(x86_64)  
+```
+wget https://github.com/lief-project/LIEF/releases/download/0.10.1/LIEF-0.10.1-Linux.tar.gz
+tar xvf LIEF-0.10.1-Linux.tar.gz
+cd LIEF-0.10.1-Linux
+cp -r include/ /usr/local/
+cp -r lib/ /usr/local/
+```
+或者下载源码，编译安装
 ```
 cmake .
 make -j4
 make install
 ```
-###dyninst  
-https://github.com/dyninst/dyninst  
+###dyninst 10.1.0  
+https://github.com/dyninst/dyninst/archive/v10.1.0.tar.gz
 一个非常庞大、复杂、历史悠久的库，安装起来相当费劲...  
-需要boost支持，编译时会主动下载  
+首先装一些基础库
+```
+apt-get install cmake libblkid-dev e2fslibs-dev libboost-all-dev libaudit-dev texlive-latex-base libelf-dev libdwarf-dev libiberty-dev
+```
+make过程中会主动下载TBB、ElfUtils等源码进行编译
 ```
 cmake .
 make -j4
@@ -34,7 +50,10 @@ make install
 ```
 ###capstone  
 https://github.com/aquynh/capstone  
-下载源码，编译安装
+```
+apt install libcapstone3 libcapstone-dev
+```
+或者下载源码，编译安装
 ```
 ./make.sh
 ```
@@ -46,8 +65,9 @@ cd demo
 make
 cd ..
 ar crv libCJsonObject.a cJSON.o CJsonObject.o
-cp CJsonObject.hpp /usr/include
-cp libCJsonObject.a /usr/lib
+cp CJsonObject.hpp /usr/local/include
+cp cJSON.h /usr/local/include
+cp libCJsonObject.a /usr/local/lib
 ```
 ##使用
 通过修改config.json配置文件，选择想要使用的策略。
