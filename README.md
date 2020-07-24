@@ -198,4 +198,4 @@ cp libCJsonObject.a /usr/local/lib
 }
 ```
 ##Contact
-null00string@gmail.com
+nu00string@gmail.com
