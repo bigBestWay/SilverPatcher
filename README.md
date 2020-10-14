@@ -42,6 +42,8 @@ src/ELF/Binary.tcc 631行:
 +  segment_added = &this->add(new_segment);
 +}
 ```
+打完补丁后
+```
 cmake .
 make -j4
 make install
