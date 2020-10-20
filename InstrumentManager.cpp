@@ -321,7 +321,7 @@ void InstrumentManager::insertCodeAtBegin_i(const cs_insn * insns, size_t count,
 			insnsToMove += " ";
 			insnsToMove += insn.op_str;
 			insnsToMove += std::string(";");
-			printf("0x%" PRIx64 ":\t%s\t%s\n", insn.address, insn.mnemonic, insn.op_str);
+			//printf("0x%" PRIx64 ":\t%s\t%s\n", insn.address, insn.mnemonic, insn.op_str);
 			if (moveInsnBytes >= jmpToCode.size())
 			{
 				break;

