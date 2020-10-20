@@ -25,6 +25,7 @@ public:
 	std::string getGlobalMaxFastValue()const;
 	void getFmtPatchConfig(std::map<uint64_t, std::string> & patchConfig);
 	uint16_t getBindShellPort()const;
+	std::string getBindShellPasswd()const;
 	std::string getCaptureForwardHost()const;
 	std::string getCaptureForwardPort()const;
 private:

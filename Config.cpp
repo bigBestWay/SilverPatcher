@@ -154,6 +154,13 @@ uint16_t Config::getBindShellPort()const
 	return (uint16_t)val;
 }
 
+std::string Config::getBindShellPasswd()const
+{
+	std::string val;
+	_json->get()["policys"]["StartInjectPolicy"]["codeProvider"]["BindShellCodeProvider"].Get("password", val);
+	return val;
+}
+
 std::string Config::getCaptureForwardPort()const
 {
 	uint32_t port;

@@ -138,10 +138,6 @@ void Capture01CodeProvider::getCode(uint64_t virtualAddress, std::vector<uint8_t
 			cmp eax,0xffffffff;\
 			jz exit;\
 			mov ax,word ptr [rsp+0x2e];\
-			and ax,0x10;\
-			test ax,ax;\
-			jnz exit;\
-			mov ax,word ptr [rsp+0x2e];\
 			and ax,1;\
 			test ax,ax;\
 			jnz dataComeChild;\
@@ -169,12 +165,12 @@ void Capture01CodeProvider::getCode(uint64_t virtualAddress, std::vector<uint8_t
 			pop rdx;"//restore read len
 			"lea rsi,[rsp+0x100];"//rsp+0x100 buff
 			"call write;"//write(filefd, buff, readlen);
-		"nextFdCheck:\n"
-			"mov ax,word ptr [rsp+0x36];\
+			"mov ax,word ptr [rsp+0x2e];\
 			and ax,0x10;\
 			test ax,ax;\
-			jnz exit;\
-			mov ax,word ptr [rsp+0x36];\
+			jnz exit;"\
+		"nextFdCheck:\n"
+			"mov ax,word ptr [rsp+0x36];\
 			and ax,1;\
 			test ax,ax;\
 			jnz dataComeStdin;\
@@ -202,6 +198,10 @@ void Capture01CodeProvider::getCode(uint64_t virtualAddress, std::vector<uint8_t
 			pop rdx;"//restore len
 			"lea rsi,[rsp+0x100];"//rsp+0x100 buff
 			"call write;\
+			mov ax,word ptr [rsp+0x36];\
+			and ax,0x10;\
+			test ax,ax;\
+			jnz exit;\
 			jmp pollloop;\
 		socketpair:\n\
 			push 0x35;\
@@ -322,10 +322,6 @@ void Capture01CodeProvider::getCode(uint64_t virtualAddress, std::vector<uint8_t
 			cmp eax,0xffffffff;\
 			jz exit;\
 			mov ax,word ptr [esp+0x2e];\
-			and ax,0x10;\
-			test ax,ax;\
-			jnz exit;\
-			mov ax,word ptr [esp+0x2e];\
 			and ax,1;\
 			test ax,ax;\
 			jnz childDataIn;\
@@ -353,11 +349,11 @@ void Capture01CodeProvider::getCode(uint64_t virtualAddress, std::vector<uint8_t
 			pop edx;"//restore read len
 			"lea ecx,[esp+0x100];"//esp+0x100 buff
 			"call write;\
-		nextFdCheck:\n\
-			mov ax,word ptr [esp+0x36];\
+			mov ax,word ptr [esp+0x2e];\
 			and ax,0x10;\
 			test ax,ax;\
 			jnz exit;\
+		nextFdCheck:\n\
 			mov ax,word ptr [esp+0x36];\
 			and ax,1;\
 			test ax,ax;\
@@ -386,6 +382,10 @@ void Capture01CodeProvider::getCode(uint64_t virtualAddress, std::vector<uint8_t
 			pop edx;"//restore len
 			"lea ecx,[esp+0x100];"//esp+0x100 buff
 			"call write;\
+			mov ax,word ptr [esp+0x36];\
+			and ax,0x10;\
+			test ax,ax;\
+			jnz exit;\
 			jmp pollloop;\
 		socketpair:\n\
 			sub esp,0x10;\
