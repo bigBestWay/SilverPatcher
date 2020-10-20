@@ -100,17 +100,17 @@ cp libCJsonObject.a /usr/local/lib
     "policys":
         {
             "enableNXPolicy":{
-				"comment":"开启NX。",
+                "comment":"开启NX。",
                 "level":"SECURE",
                 "enable":1
             },
             "BindNowPolicy":{
-				"comment":"修改PLTGOT懒加载为立即绑定，抵抗_dl_runtime_solve攻击。",
+                "comment":"修改PLTGOT懒加载为立即绑定，抵抗_dl_runtime_solve攻击。",
                 "level":"SECURE",
                 "enable":1
             },
             "ResortGotEntryPolicy":{
-				"comment":"重新排列GOT表项，抵抗GOT劫持。ELF文件大小不变，但变动较大。",
+                "comment":"重新排列GOT表项，抵抗GOT劫持。ELF文件大小不变，但变动较大。",
                 "level":"LOW",
                 "enable":1
             },
@@ -120,45 +120,45 @@ cp libCJsonObject.a /usr/local/lib
                 "enable":0
             },
             "RiseStackPolicy":{
-				"comment":"在函数的开头抬高栈，抵抗栈溢出攻击，需要新加代码段。因有些函数代码限制，可能无法自动插入代码。",
+                "comment":"在函数的开头抬高栈，抵抗栈溢出攻击，需要新加代码段。因有些函数代码限制，可能无法自动插入代码。",
                 "level":"HIGH",
                 "enable":0
             },
             "setRPathPolicy":{
-				"comment":"修改ELF链接到指定目录下的libc.so.6（可以放置eglibc），需要添加段，这个策略过于UGLY。如果checker检查通过，理论上开启它就可以通防。它与ModifyLibcCodeProvider冲突。",
+                "comment":"修改ELF链接到指定目录下的libc.so.6（可以放置eglibc），需要添加段，这个策略过于UGLY。如果checker检查通过，理论上开启它就可以通防。它与ModifyLibcCodeProvider冲突。",
                 "level":"VERYHIGH",
                 "enable":0
             },
             "StartInjectPolicy":{
-				"comment":"该策略在start()开头插入代码执行想要的功能。",
+                "comment":"该策略在start()开头插入代码执行想要的功能。",
                 "level":"MEDIUM",
                 "enable":1,
                 "codeProvider":{
                     "ModifyLibcCodeProvider":{
-						"comment":"对libc中的数据进行修改。它与setRPathPolicy冲突。",
+                        "comment":"对libc中的数据进行修改。它与setRPathPolicy冲突。",
                         "enable":1,
                         "modifyGlobalMaxFast":{
-							"comment":"修改global_max_fast，令malloc关闭或只使用fastbin。value取值范围[1,0x7fffffff]。为1，关闭；为超大值，就会只使用fastbin。",
+                            "comment":"修改global_max_fast，令malloc关闭或只使用fastbin。value取值范围[1,0x7fffffff]。为1，关闭；为超大值，就会只使用fastbin。",
                             "enable":0,
                             "value":"1"
                         },
                         "closeTcache":{
-							"comment":"修改mp_.tcache_count，令malloc关闭tcache或改变tcache的最大数量（默认是7）。",
+                            "comment":"修改mp_.tcache_count，令malloc关闭tcache或改变tcache的最大数量（默认是7）。",
                             "enable":0
                         },
                         "setNoBufStdout":{
-							"comment":"设置STDOUT为不缓冲，这个是配合Capture01CodeProvider使用的。",
+                            "comment":"设置STDOUT为不缓冲，这个是配合Capture01CodeProvider使用的。",
                             "enable":1
                         }
                     },
                     "BindShellCodeProvider":{
-						"comment":"fork子进程，提供bindtcp_shell，密码固定是8字节。",
+                        "comment":"fork子进程，提供bindtcp_shell，密码固定是8字节。",
                         "enable":1,
                         "port":56789,
                         "password":"abcdefgh"
                     },
                     "Capture01CodeProvider":{
-						"comment":"fork子进程，抓取输入输出并保存到文件。",
+                        "comment":"fork子进程，抓取输入输出并保存到文件。",
                         "enable":1,
                         "forward_host":"117.78.9.13",
                         "forward_port":56789
@@ -220,7 +220,6 @@ cp libCJsonObject.a /usr/local/lib
         }
     }
 }
-
 ```
 ##Contact
 nu00string@gmail.com
