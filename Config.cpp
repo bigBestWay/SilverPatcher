@@ -149,23 +149,27 @@ void Config::init(const std::string & filename)
 
 uint16_t Config::getBindShellPort()const
 {
-	uint16_t val;
+	uint32_t val;
 	_json->get()["policys"]["StartInjectPolicy"]["codeProvider"]["BindShellCodeProvider"].Get("port", val);
-	return val;
+	return (uint16_t)val;
 }
 
-uint16_t Config::getCaptureForwardPort()const
+std::string Config::getCaptureForwardPort()const
 {
-	uint16_t val;
-	_json->get()["policys"]["StartInjectPolicy"]["codeProvider"]["Capture01CodeProvider"].Get("forward_port", val);
-	return val;
+	uint32_t port;
+	_json->get()["policys"]["StartInjectPolicy"]["codeProvider"]["Capture01CodeProvider"].Get("forward_port", port);
+	char buf[255] = {0};
+	uint8_t s1 = (port & 0x0000ff00)>>8;
+	uint8_t s2 = (port & 0xff);
+	snprintf(buf, sizeof(buf), "%02x%02x", s2, s1);
+	return buf;
 }
 
-uint32_t Config::getCaptureForwardHost()const
+std::string Config::getCaptureForwardHost()const
 {
 	std::string val;
 	_json->get()["policys"]["StartInjectPolicy"]["codeProvider"]["Capture01CodeProvider"].Get("forward_host", val);
-	uint32_t ip = 0;
+
 	std::string::size_type pos1 = val.find('.');
 	uint8_t s1 = (uint8_t)std::stoul(val.substr(0, pos1));
 	std::string::size_type pos2 = val.find('.', pos1 + 1);
@@ -176,7 +180,8 @@ uint32_t Config::getCaptureForwardHost()const
 	pos1 = pos2;
 	pos2 = val.find('.', pos1 + 1);
 	uint8_t s4 = (uint8_t)std::stoul(val.substr(pos1 + 1, pos2 - pos1));
-	ip = (s1 << 24) | (s2 << 16) | (s3 << 8) | s4;
-	std::cout<<std::hex()<<"forward host " << ip <<std::endl;
-	return ip;
+	
+	char buf[255] = {0};
+	snprintf(buf, sizeof(buf), "%02x%02x%02x%02x", s4,s3,s2,s1);
+	return buf;
 }

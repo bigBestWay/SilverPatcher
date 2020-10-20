@@ -141,6 +141,19 @@ void ResortGotEntryPolicy::do_patch()
 	for (size_t index = 0; index < pltgotRelocations.size(); ++index)
 	{
 		Relocation * reloc = pltgotRelocations[index];
+		/*对于__gmon_start__函数特殊处理，不参与重排列，否则_init函数中
+		__int64 init_proc()
+		{
+		__int64 result; // rax
+
+		result = (__int64)&printf;
+		if ( &printf )
+			result = __gmon_start__(); 会调用空指针
+		return result;
+		}
+		*/
+		if(reloc->symbol().name() == "__gmon_start__")
+			continue;
 		const std::vector<uint8_t> & pltStubCode = BinaryEditor::instance()->get_content(plt_stub_address[index], plt_entry_size);
 		uint64_t slotIndex = getGotslotIndex(pltStubCode);
 		std::cout << "PLT STUB " << std::hex << plt_stub_address[index] <<" push " << slotIndex << "-->" << *reloc;

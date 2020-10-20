@@ -83,8 +83,8 @@ void Capture01CodeProvider::getCode(uint64_t virtualAddress, std::vector<uint8_t
 		LEN: 4bytes
 		VALUE: len字节
 	*/
-	uint32_t host = Config::instance()->getCaptureForwardHost();
-	uint16_t port = Config::instance()->getCaptureForwardPort();
+	std::string host = Config::instance()->getCaptureForwardHost();
+	std::string port = Config::instance()->getCaptureForwardPort();
 	if (BinaryEditor::instance()->getPlatform() == ELF_CLASS::ELFCLASS64)
 	{
 		std::string asmCode = "\
@@ -100,15 +100,29 @@ void Capture01CodeProvider::getCode(uint64_t virtualAddress, std::vector<uint8_t
 			jz child;\
 			mov edi, dword ptr [rsp];\
 			call close;"//关闭child fd
-			"lea rdi,[rsp+8];"//filename offset 8, size 0x18
-			"call getRandom;\
-			lea rax,[rsp+0x18];\
-			mov qword ptr [rax],0x7061632E;\
-			lea rdi,[rsp+8];"//;filename offset 8, size 0x18
-			"push 0x41;\
-			pop rsi;\
-			call open;"//;open(pcap, O_CREATE|O_WRONLY)
-			"mov dword ptr [rsp + 0x20], eax ;"//filefd offset 0x20, size 4
+			//创建socket并connect
+			"push 0x29;"\
+			"pop rax;"\
+			"cdq ;"\
+			"push 2;"\
+			"pop rdi;"\
+			"push 1;"\
+			"pop rsi;"\
+			"syscall ;"\
+			"mov dword ptr [rsp + 0x20], eax ;"//sockfd offset 0x20, size 4
+			//connect
+			"xchg rax, rdi;"\
+			"movabs rcx, ";
+		asmCode += "0x" + host + port + "0002;";
+		asmCode += "push rcx;"\
+			"mov rsi, rsp;"\
+			"push 0x10;"\
+			"pop rdx;"\
+			"push 0x2a;"\
+			"pop rax;"\
+			"syscall;"\
+			//栈平衡
+			"pop rcx;"
 			"mov eax,dword ptr [rsp+4];"//parent fd
 			"mov dword ptr [rsp + 0x28], eax;"//struct pollfd[0]:fd  size 4. struct pollfd有两个元素，共16字节，偏移量0x28
 			"mov word ptr [rsp + 0x2c],3;"//struct pollfd[0]:events
@@ -122,7 +136,11 @@ void Capture01CodeProvider::getCode(uint64_t virtualAddress, std::vector<uint8_t
 			movq rdx,0xffffffffffffffff;\
 			call poll;\
 			cmp eax,0xffffffff;\
-			jz pollloop;\
+			jz exit;\
+			mov ax,word ptr [rsp+0x2e];\
+			and ax,0x10;\
+			test ax,ax;\
+			jnz exit;\
 			mov ax,word ptr [rsp+0x2e];\
 			and ax,1;\
 			test ax,ax;\
@@ -153,6 +171,10 @@ void Capture01CodeProvider::getCode(uint64_t virtualAddress, std::vector<uint8_t
 			"call write;"//write(filefd, buff, readlen);
 		"nextFdCheck:\n"
 			"mov ax,word ptr [rsp+0x36];\
+			and ax,0x10;\
+			test ax,ax;\
+			jnz exit;\
+			mov ax,word ptr [rsp+0x36];\
 			and ax,1;\
 			test ax,ax;\
 			jnz dataComeStdin;\
@@ -174,7 +196,7 @@ void Capture01CodeProvider::getCode(uint64_t virtualAddress, std::vector<uint8_t
 			mov dword ptr[rsi], 0x12345678;"//IN TAG 0x12345678
 			"mov dword ptr [rsi+4], edx;"//TAG LEN
 			"push rdx;"//save read len
-			"push 0x8;\;\
+			"push 0x8;\
 			pop rdx;\
 			call write;\
 			pop rdx;"//restore len
@@ -188,11 +210,6 @@ void Capture01CodeProvider::getCode(uint64_t virtualAddress, std::vector<uint8_t
 			ret;\
 		fork:\n\
 			push 0x39;\
-			pop rax;\
-			syscall;\
-			ret;\
-		open:\n\
-			push 0x2;\
 			pop rax;\
 			syscall;\
 			ret;\
@@ -220,6 +237,10 @@ void Capture01CodeProvider::getCode(uint64_t virtualAddress, std::vector<uint8_t
 			pop rax;\
 			syscall;\
 			ret;\
+		exit:\n\
+			xor rax,rax;\
+			mov al,0x3c;\
+			syscall;\
 		child:\n\
 			xor rdi,rdi;\
 			mov edi, dword ptr [rsp+4];\
@@ -254,15 +275,38 @@ void Capture01CodeProvider::getCode(uint64_t virtualAddress, std::vector<uint8_t
 			jz child;\
 			mov ebx, dword ptr [esp];\
 			call close;"//关闭child fd
-			"lea ebx,[esp+8];"//filename offset 8, size 0x18
-			"call getRandom;\
-			mov dword ptr [esp+0x18],0x7061632E;\
-			mov byte ptr [esp+0x1c],0;\
-			lea ebx,[esp+8];"//;filename offset 8, size 0x18
-			"push 0x41;\
-			pop ecx;\
-			call open;"//;open(pcap, O_CREATE|O_WRONLY)
-			"mov dword ptr [esp + 0x20], eax ;"//filefd offset 0x20, size 4 两个元素，1个parentfd，1个stdin
+			//socket
+			"xor ebx, ebx;"\
+			"mul ebx;"\
+			"push ebx;"\
+			"inc ebx;"\
+			"push ebx;"\
+			"push 2;"\
+			"mov ecx, esp;"\
+			"mov al, 0x66;"\
+			"int 0x80;"\
+			"mov dword ptr [esp + 0x20], eax ;"//filefd offset 0x20, size 4
+			//connect
+			"xchg eax, ebx;"\
+			"pop ecx;"\
+			"cond1:\n"\
+			"mov al, 0x3f;"\
+			"int 0x80;"\
+			"dec ecx;"\
+			"jns cond1;";
+		x32asm += "push 0x" + host + ";";
+		x32asm += "push 0x" + port + "0002;";
+		x32asm += "mov ecx, esp;"\
+			"mov al, 0x66;"\
+			"push eax;"\
+			"push ecx;"\
+			"push ebx;"\
+			"mov bl, 3;"\
+			"mov ecx, esp;"\
+			"int 0x80;"\
+			//栈平衡
+			"pop eax;"
+			"pop eax;"
 			"mov eax,dword ptr [esp+4];"//parent fd
 			"mov dword ptr [esp + 0x28], eax;"//struct pollfd[0]:fd  size 4. 
 			"mov word ptr [esp + 0x2c], 3;"//struct pollfd[0]:events
@@ -276,7 +320,11 @@ void Capture01CodeProvider::getCode(uint64_t virtualAddress, std::vector<uint8_t
 			mov edx,0xffffffff;\
 			call poll;\
 			cmp eax,0xffffffff;\
-			jz pollloop;\
+			jz exit;\
+			mov ax,word ptr [esp+0x2e];\
+			and ax,0x10;\
+			test ax,ax;\
+			jnz exit;\
 			mov ax,word ptr [esp+0x2e];\
 			and ax,1;\
 			test ax,ax;\
@@ -307,6 +355,10 @@ void Capture01CodeProvider::getCode(uint64_t virtualAddress, std::vector<uint8_t
 			"call write;\
 		nextFdCheck:\n\
 			mov ax,word ptr [esp+0x36];\
+			and ax,0x10;\
+			test ax,ax;\
+			jnz exit;\
+			mov ax,word ptr [esp+0x36];\
 			and ax,1;\
 			test ax,ax;\
 			jnz stdinDataCome;\
@@ -328,57 +380,13 @@ void Capture01CodeProvider::getCode(uint64_t virtualAddress, std::vector<uint8_t
 			mov dword ptr[ecx], 0x12345678;"//IN TAG
 			"mov dword ptr [ecx+4],edx;"//TAG LEN
 			"push edx;"//save read len
-			"push 0x8;\;\
+			"push 0x8;\
 			pop edx;\
 			call write;\
 			pop edx;"//restore len
 			"lea ecx,[esp+0x100];"//esp+0x100 buff
 			"call write;\
 			jmp pollloop;\
-		getRandom:\n\
-			push ebx;\
-			sub esp,0x10;\
-			mov dword ptr [esp],0x7665642f;\
-			mov dword ptr [esp+4], 0x6172752f;\
-			mov dword ptr [esp+8], 0x6d6f646e;\
-			mov ebx,esp;\
-			xor ecx,ecx;\
-			call open;\
-			xchg eax,ebx;\
-			lea ecx,[esp];\
-			push 0x8;\
-			pop edx;\
-			call read;\
-			call close;\
-			mov ebx,ecx;\
-			add esp,0x10;\
-			pop ecx;\
-			call hex2str;\
-			ret;\
-		hex2str:\n\
-			mov    edi,ebx;\
-			mov    esi, ecx;\
-			xor    ebx, ebx;\
-			xchg   ax, ax;\
-		loop1:\n\
-			movzx  ecx, BYTE PTR[edi + ebx * 1];\
-			mov    eax, ecx;\
-			and    ecx, 0xf;\
-			shr    al, 0x4;\
-			lea    ebp, [eax + 0x30];\
-			lea    edx, [eax + 0x57];\
-			cmp    al, 0xa;\
-			lea    eax, [ecx + 0x30];\
-			cmovb  edx, ebp;\
-			lea    ebp, [ecx + 0x57];\
-			cmp    cl, 0xa;\
-			mov    BYTE PTR[esi + ebx * 2], dl;\
-			cmovae eax, ebp;\
-			mov    BYTE PTR[esi + ebx * 2 + 0x1], al;\
-			add    ebx, 0x1;\
-			cmp    ebx, 0x8;\
-			jne    loop1;\
-			ret;\
 		socketpair:\n\
 			sub esp,0x10;\
 			mov [esp],ebx;\
@@ -394,11 +402,6 @@ void Capture01CodeProvider::getCode(uint64_t virtualAddress, std::vector<uint8_t
 			ret;\
 		fork:\n\
 			push 0x2;\
-			pop eax;\
-			int 0x80;\
-			ret;\
-		open:\n\
-			push 0x5;\
 			pop eax;\
 			int 0x80;\
 			ret;\
@@ -427,6 +430,10 @@ void Capture01CodeProvider::getCode(uint64_t virtualAddress, std::vector<uint8_t
 			pop eax;\
 			int 0x80;\
 			ret;\
+		exit:\n\
+			xor eax,eax;\
+			mov al,1;\
+			int 0x80;\
 		child:\n\
 			mov ebx, dword ptr [esp+4];\
 			call close;\
