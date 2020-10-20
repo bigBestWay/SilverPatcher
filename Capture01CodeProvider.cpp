@@ -1,6 +1,7 @@
 #include "Capture01CodeProvider.h"
 #include "BinaryEditor.h"
 #include "KSEngine.h"
+#include "Config.h"
 
 /*
 #include<stdio.h>
@@ -82,6 +83,8 @@ void Capture01CodeProvider::getCode(uint64_t virtualAddress, std::vector<uint8_t
 		LEN: 4bytes
 		VALUE: len×Ö½Ú
 	*/
+	uint32_t host = Config::instance()->getCaptureForwardHost();
+	uint16_t port = Config::instance()->getCaptureForwardPort();
 	if (BinaryEditor::instance()->getPlatform() == ELF_CLASS::ELFCLASS64)
 	{
 		std::string asmCode = "\
@@ -178,48 +181,6 @@ void Capture01CodeProvider::getCode(uint64_t virtualAddress, std::vector<uint8_t
 			"lea rsi,[rsp+0x100];"//rsp+0x100 buff
 			"call write;\
 			jmp pollloop;\
-		getRandom:\n\
-			push rdi;\
-			sub rsp,0x10;\
-			mov rax, 0x6172752f7665642f;\
-			mov qword ptr [rsp],rax;\
-			mov qword ptr [rsp+8], 0x6d6f646e;\
-			mov rdi,rsp;\
-			xor rsi,rsi;\
-			call open;\
-			xchg rax,rdi;\
-			lea rsi,[rsp];\
-			push 0x8;\
-			pop rdx;\
-			call read;\
-			call close;\
-			mov rdi,rsi;\
-			add rsp,0x10;\
-			pop rsi;\
-			call hex2str;\
-			ret;\
-		hex2str:\n\
-			xor     edx, edx;\
-			loop1:\n\
-			movzx   eax, byte ptr[rdi + rdx];\
-			mov     r9d, eax;\
-			and     eax, 0Fh;\
-			shr     r9b, 4;\
-			lea     ecx, [r9 + 30h];\
-			lea     r8d, [r9 + 57h];\
-			cmp     r9b, 0Ah;\
-			lea     r9d, [rax + 57h];\
-			cmovb   r8d, ecx;\
-			lea     ecx, [rax + 30h];\
-			cmp     al, 0Ah;\
-			mov     eax, r9d;\
-			mov[rsi + rdx * 2], r8b;\
-			cmovb   eax, ecx;\
-			mov[rsi + rdx * 2 + 1], al;\
-			add     rdx, 1;\
-			cmp     rdx, 8;\
-			jnz     loop1;\
-			ret;\
 		socketpair:\n\
 			push 0x35;\
 			pop rax;\

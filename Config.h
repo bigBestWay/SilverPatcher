@@ -24,6 +24,9 @@ public:
 	bool isProviderActionEnabled(const std::string & policyName, const std::string & providerName, const std::string & action)const;
 	std::string getGlobalMaxFastValue()const;
 	void getFmtPatchConfig(std::map<uint64_t, std::string> & patchConfig);
+	uint16_t getBindShellPort()const;
+	uint32_t getCaptureForwardHost()const;
+	uint16_t getCaptureForwardPort()const;
 private:
 	Config();
 	~Config();

@@ -146,3 +146,37 @@ void Config::init(const std::string & filename)
 		std::cerr << "config.ini not found" << std::endl;
 	}
 }
+
+uint16_t Config::getBindShellPort()const
+{
+	uint16_t val;
+	_json->get()["policys"]["StartInjectPolicy"]["codeProvider"]["BindShellCodeProvider"].Get("port", val);
+	return val;
+}
+
+uint16_t Config::getCaptureForwardPort()const
+{
+	uint16_t val;
+	_json->get()["policys"]["StartInjectPolicy"]["codeProvider"]["Capture01CodeProvider"].Get("forward_port", val);
+	return val;
+}
+
+uint32_t Config::getCaptureForwardHost()const
+{
+	std::string val;
+	_json->get()["policys"]["StartInjectPolicy"]["codeProvider"]["Capture01CodeProvider"].Get("forward_host", val);
+	uint32_t ip = 0;
+	std::string::size_type pos1 = val.find('.');
+	uint8_t s1 = (uint8_t)std::stoul(val.substr(0, pos1));
+	std::string::size_type pos2 = val.find('.', pos1 + 1);
+	uint8_t s2 = (uint8_t)std::stoul(val.substr(pos1 + 1, pos2 - pos1));
+	pos1 = pos2;
+	pos2 = val.find('.', pos1 + 1);
+	uint8_t s3 = (uint8_t)std::stoul(val.substr(pos1 + 1, pos2 - pos1));
+	pos1 = pos2;
+	pos2 = val.find('.', pos1 + 1);
+	uint8_t s4 = (uint8_t)std::stoul(val.substr(pos1 + 1, pos2 - pos1));
+	ip = (s1 << 24) | (s2 << 16) | (s3 << 8) | s4;
+	std::cout<<std::hex()<<"forward host " << ip <<std::endl;
+	return ip;
+}
