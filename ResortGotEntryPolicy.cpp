@@ -10,7 +10,7 @@ struct ResortGotEntryPolicy::PLTGOTStruct
 	{
 	}
 
-	const uint64_t pltStubAddress;
+	uint64_t pltStubAddress;
 
 	uint32_t gotSlotIndex;
 	Relocation * gotEntry;
@@ -26,6 +26,25 @@ struct ResortGotEntryPolicy::PLTGOTStruct
 		other.gotEntry = tmpEntry;
 
 		this->gotEntry->symbol().swap(other.gotEntry->symbol());
+	}
+
+	PLTGOTStruct & operator=(const PLTGOTStruct & o)
+	{
+		if (*this == o)
+		{
+			return *this;
+		}
+		
+		this->pltStubAddress = o.pltStubAddress;
+		this->gotEntry = o.gotEntry;
+		this->gotSlotIndex = o.gotSlotIndex;
+
+		return *this;
+	}
+
+	bool operator==(const PLTGOTStruct & o)const
+	{
+		return this->pltStubAddress == o.pltStubAddress && this->gotEntry == o.gotEntry && this->gotSlotIndex == o.gotSlotIndex;
 	}
 };
 
@@ -164,6 +183,7 @@ void ResortGotEntryPolicy::do_patch()
 		pltgotStructs.push_back(stru);
 	}
 
+	std::random_shuffle(pltgotStructs.begin(), pltgotStructs.end());
 	//互换规则：
 	//数量为2n+1，除第1个之外2n对换，第1个和2n+1换
 	//数量为2n，对换(1<->4, 2<->3)
