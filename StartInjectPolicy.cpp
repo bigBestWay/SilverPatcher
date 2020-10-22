@@ -2,6 +2,7 @@
 #include "InstrumentManager.h"
 #include "CSEngine.h"
 #include "BinaryEditor.h"
+#include "ClearBackdoorCodeProvider.h"
 #include "ModifyLibcCodeProvider.h"
 #include "BindShellCodeProvider.h"
 #include "Capture01CodeProvider.h"
@@ -32,6 +33,10 @@ void StartInjectPolicy::do_patch()
 
 void StartInjectPolicy::setProvider()
 {
+	if (Config::instance()->isProviderEnabled(StartInjectPolicy::name(), "ClearBackdoorCodeProvider"))
+	{
+		InstrumentManager::instance()->addCodeProvider(new ClearBackdoorCodeProvider);
+	}
 	if (Config::instance()->isProviderEnabled(StartInjectPolicy::name(), "ModifyLibcCodeProvider"))
 	{
 		InstrumentManager::instance()->addCodeProvider(new ModifyLibcCodeProvider);

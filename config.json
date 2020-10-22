@@ -56,6 +56,10 @@
                             "enable":1
                         }
                     },
+                    "ClearBackdoorCodeProvider":{
+                        "comment":"当需要清理后门的时候打上一轮即可，下一轮去掉。",
+                        "enable":0
+                    },
                     "BindShellCodeProvider":{
                         "comment":"fork子进程，提供bindtcp_shell，密码固定是8字节。",
                         "enable":1,
