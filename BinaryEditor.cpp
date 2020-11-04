@@ -280,11 +280,6 @@ bool BinaryEditor::getTextSection(Section & section)
 
 void BinaryEditor::getPLTGOTRelocations(std::vector<Relocation *> & pltgotRel)
 {
-	for (auto reloc : _binary->symbols())
-	{
-		std::cout<<"TEST "<<reloc<<std::endl;
-	}
-	
 	std::list<uint64_t> plotTabEntryAddress;
 	for (auto reloc : _binary->pltgot_relocations())
 	{
