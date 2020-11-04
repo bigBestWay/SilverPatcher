@@ -29,11 +29,13 @@
 #include "Config.h"
 #include "DisableFreePolicy.h"
 #include "FmtVulScanRepairPolicy.h"
+#include "RandomPLTGOTPolicy.h"
 
 static std::vector<PatchPolicy *> s_policys;
 
 void loadPolicys()
 {
+	s_policys.push_back(new RandomPLTGOTPolicy);
 	if (Config::instance()->isPolicyEnabled(enableNXPolicy::name()))
 	{
 			s_policys.push_back(new enableNXPolicy());

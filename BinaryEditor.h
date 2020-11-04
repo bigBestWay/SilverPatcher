@@ -99,6 +99,10 @@ public:
 	bool getGOTSection(Section & section);
 	//.text
 	bool getTextSection(Section & section);
+	//.rela.dyn
+	bool getReladynSection(Section & section);
+	//.dynstr
+	bool getDynstrSection(Section & section);
 
 	void getPLTGOTRelocations(std::vector<Relocation *> & pltgotRel);
 

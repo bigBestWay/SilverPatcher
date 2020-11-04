@@ -278,6 +278,34 @@ bool BinaryEditor::getTextSection(Section & section)
 	return false;
 }
 
+bool BinaryEditor::getReladynSection(Section & section)
+{
+	for (const Section & sec : _binary->sections())
+	{
+		if (sec.type() == ELF_SECTION_TYPES::SHT_RELA && sec.name() == ".rela.dyn")
+		{
+			section = sec;
+			return true;
+		}
+	}
+
+	return false;
+}
+
+bool BinaryEditor::getDynstrSection(Section & section)
+{
+	for (const Section & sec : _binary->sections())
+	{
+		if (sec.type() == ELF_SECTION_TYPES::SHT_STRTAB && sec.name() == ".dynstr")
+		{
+			section = sec;
+			return true;
+		}
+	}
+
+	return false;
+}
+
 void BinaryEditor::getPLTGOTRelocations(std::vector<Relocation *> & pltgotRel)
 {
 	std::list<uint64_t> plotTabEntryAddress;
