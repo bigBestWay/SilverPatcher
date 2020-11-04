@@ -77,6 +77,27 @@ bool CSEngine::isInsnOphasRIP(const cs_insn & insn)
 	}
 	return false;
 }
+/*
+0x400819:	call	0x4005e0
+	op_count: 1
+		operands[0].type: IMM = 0x4005e0
+*/
+bool CSEngine::isCallMe(const cs_insn & insn, uint64_t me)
+{
+	if (insn.id != X86_INS_CALL)
+	{
+		return false;
+	}
+	
+	cs_x86 * x86 = &(insn.detail->x86);
+	if (x86->op_count != 1)
+		return false;
+	cs_x86_op *op = &(x86->operands[0]);
+	if(op->type != X86_OP_IMM)
+		return false;
+	
+	return op->imm == me;
+}
 
 void CSEngine::disasmShow(const std::vector<uint8_t> & code, uint64_t address, bool showdetail)
 {

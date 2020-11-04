@@ -36,6 +36,8 @@ public:
 	//指令操作数里是否有RIP, 比如RET或mov eax, [RIP + 8]
 	bool isInsnOphasRIP(const cs_insn & insn);
 
+	bool isCallMe(const cs_insn & insn, uint64_t me);
+
 	void disasmShow(const std::vector<uint8_t> & code, uint64_t address, bool showdetail = false);
 
 	void disasmShow(const cs_insn & insn, bool showdetail = true);

@@ -4,6 +4,10 @@ class BindNowPolicy :
 	public PatchPolicy
 {
 public:
+	static const char * name()
+	{
+		return "BindNowPolicy";
+	}
 	BindNowPolicy()
 	{
 		this->setRiskLevel(SECURE);

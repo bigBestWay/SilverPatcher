@@ -264,9 +264,27 @@ bool BinaryEditor::getGOTSection(Section & section)
 	return false;
 }
 
+bool BinaryEditor::getTextSection(Section & section)
+{
+	for (const Section & sec : _binary->sections())
+	{
+		if (sec.type() == ELF_SECTION_TYPES::SHT_PROGBITS && sec.name() == ".text")
+		{
+			section = sec;
+			return true;
+		}
+	}
+
+	return false;
+}
 
 void BinaryEditor::getPLTGOTRelocations(std::vector<Relocation *> & pltgotRel)
 {
+	for (auto reloc : _binary->symbols())
+	{
+		std::cout<<"TEST "<<reloc<<std::endl;
+	}
+	
 	std::list<uint64_t> plotTabEntryAddress;
 	for (auto reloc : _binary->pltgot_relocations())
 	{
@@ -291,6 +309,10 @@ uint32_t BinaryEditor::getPLTEntrySize()
 	case ARCH::EM_386:
 	case ARCH::EM_X86_64:
 		plt_entry_size = 16;
+		if (this->isGotReadonly())
+		{
+			plt_entry_size = 8;
+		}
 		break;
 	default:
 		break;

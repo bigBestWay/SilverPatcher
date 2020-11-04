@@ -97,6 +97,8 @@ public:
 	bool getPLTGOTSection(Section & section);
 	//.got
 	bool getGOTSection(Section & section);
+	//.text
+	bool getTextSection(Section & section);
 
 	void getPLTGOTRelocations(std::vector<Relocation *> & pltgotRel);
 

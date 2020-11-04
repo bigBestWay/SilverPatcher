@@ -34,9 +34,14 @@ static std::vector<PatchPolicy *> s_policys;
 
 void loadPolicys()
 {
-	s_policys.push_back(new enableNXPolicy());
-	//BindNowPolicy和ResortGotEntryPolicy组合执行效果最好
-	s_policys.push_back(new BindNowPolicy());
+	if (Config::instance()->isPolicyEnabled(enableNXPolicy::name()))
+	{
+			s_policys.push_back(new enableNXPolicy());
+	}
+	if (Config::instance()->isPolicyEnabled(BindNowPolicy::name()))
+	{
+			s_policys.push_back(new BindNowPolicy());
+	}
 	if (Config::instance()->isPolicyEnabled(ResortGotEntryPolicy::name()))
 	{
 		s_policys.push_back(new ResortGotEntryPolicy());
