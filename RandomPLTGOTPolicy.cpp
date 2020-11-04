@@ -5,6 +5,14 @@
 #include <string>
 #include <list>
 
+#define ELF32_R_SYM(val)		((val) >> 8)
+#define ELF32_R_TYPE(val)		((val) & 0xff)
+#define ELF32_R_INFO(sym, type)		(((sym) << 8) + ((type) & 0xff))
+
+#define ELF64_R_SYM(i)			((i) >> 32)
+#define ELF64_R_TYPE(i)			((i) & 0xffffffff)
+#define ELF64_R_INFO(sym,type)		((((Elf64_Xword) (sym)) << 32) + (type))
+
 void RandomPLTGOTPolicy::do_patch()
 {
 	label("RandomPLTGOTPolicy");
@@ -36,8 +44,9 @@ void RandomPLTGOTPolicy::do_patch()
 			Elf64_Rela * rela = (Elf64_Rela *)data.data();
 			for (size_t i = 0; i < data.size()/sizeof(Elf64_Rela); ++i)
 			{
-				const char *str = strtab + ELF64_R_SYM(rela[i].r_info);
-				std::cout << "RELA " << std::string(str) << " " < std::hex << ELF64_R_SYM(rela[i].r_info);
+                                uint64_t offset = ELF64_R_SYM(rela[i].r_info);
+				const char *str = strtab + offset;
+				std::cout << "RELA " << std::string(str) << " " << std::hex << offset <<std::endl;
 				sym2rela[str] = rela;
 			}
 		}
