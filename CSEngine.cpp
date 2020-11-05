@@ -34,6 +34,11 @@ size_t CSEngine::disasm(const std::vector<uint8_t> & code, uint64_t address, cs_
 	return cs_disasm(_handle, code.data(), code.size(), address, 0, insn);
 }
 
+size_t CSEngine::disasm(const uint8_t * data, size_t size, uint64_t address, cs_insn ** insn)
+{
+	return cs_disasm(_handle, data, size, address, 0, insn);
+}
+
 bool CSEngine::isInsnOphasRIP(const cs_insn & insn)
 {
 	const char * ripName = BinaryEditor::instance()->getPlatform() == ELF_CLASS::ELFCLASS32 ? "eip" : "rip";
@@ -97,6 +102,34 @@ bool CSEngine::isCallMe(const cs_insn & insn, uint64_t me)
 		return false;
 	
 	return op->imm == me;
+}
+
+bool CSEngine::getGotEntryOfPltstub(const uint8_t * data, size_t size, uint64_t address, uint64_t & gotentry)
+{
+	cs_insn * insn = nullptr;
+	size_t count = cs_disasm(_handle, data, size, address, 0, &insn);
+	bool isX32 = ELF_CLASS::ELFCLASS32 == BinaryEditor::instance()->getPlatform();
+
+	if (count == 0)
+		return false;
+	//jmp	qword ptr [rip + 0x200992]
+	//jmp	dword ptr [0x8049ff4]
+	cs_x86 * x86 = &(insn[0].detail->x86);
+	if (x86->op_count == 1)
+	{
+		cs_x86_op *op = &(x86->operands[0]);
+		if (op->type == X86_OP_MEM)
+		{
+			if (isX32)
+				gotentry = op->mem.disp;
+			else
+				gotentry = address + insn[0].size + op->mem.disp;
+			return true;
+		}
+	}
+
+	cs_free(insn, count);
+	return false;
 }
 
 void CSEngine::disasmShow(const std::vector<uint8_t> & code, uint64_t address, bool showdetail)

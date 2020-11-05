@@ -101,10 +101,16 @@ public:
 	bool getTextSection(Section & section);
 	//.rela.dyn
 	bool getReladynSection(Section & section);
+	//.rel.dyn
+	bool getReldynSection(Section & section);
 	//.dynstr
 	bool getDynstrSection(Section & section);
+	//.dynsym
+	bool getDynsymSection(Section & section);
 
 	void getPLTGOTRelocations(std::vector<Relocation *> & pltgotRel);
+
+	void getAllRelocations(std::vector<Relocation *> & allrels);
 
 	const Section & textSection()const
 	{

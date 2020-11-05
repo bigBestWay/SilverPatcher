@@ -14,8 +14,8 @@
                 "level":"SECURE",
                 "enable":1
             },
-            "ResortGotEntryPolicy":{
-                "comment":"重新排列GOT表项，抵抗GOT劫持。ELF文件大小不变，但变动较大。",
+            "RandomPLTGOTPolicy":{
+                "comment":"重新排列PLT/GOT表项。ELF文件大小不变，但变动较大。",
                 "level":"LOW",
                 "enable":1
             },

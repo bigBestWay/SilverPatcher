@@ -23,6 +23,8 @@ public:
 
 	size_t disasm(const std::vector<uint8_t> & code, uint64_t address, cs_insn ** insn);
 
+	size_t disasm(const uint8_t * data, size_t size, uint64_t address, cs_insn ** insn);
+
 	const char * reg_name(unsigned int reg_id)
 	{
 		return cs_reg_name(_handle, reg_id);
@@ -37,6 +39,8 @@ public:
 	bool isInsnOphasRIP(const cs_insn & insn);
 
 	bool isCallMe(const cs_insn & insn, uint64_t me);
+
+	bool getGotEntryOfPltstub(const uint8_t * data, size_t size, uint64_t address, uint64_t & gotentry);
 
 	void disasmShow(const std::vector<uint8_t> & code, uint64_t address, bool showdetail = false);
 

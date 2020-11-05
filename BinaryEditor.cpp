@@ -292,11 +292,39 @@ bool BinaryEditor::getReladynSection(Section & section)
 	return false;
 }
 
+bool BinaryEditor::getReldynSection(Section & section)
+{
+	for (const Section & sec : _binary->sections())
+	{
+		if (sec.type() == ELF_SECTION_TYPES::SHT_REL && sec.name() == ".rel.dyn")
+		{
+			section = sec;
+			return true;
+		}
+	}
+
+	return false;
+}
+
 bool BinaryEditor::getDynstrSection(Section & section)
 {
 	for (const Section & sec : _binary->sections())
 	{
 		if (sec.type() == ELF_SECTION_TYPES::SHT_STRTAB && sec.name() == ".dynstr")
+		{
+			section = sec;
+			return true;
+		}
+	}
+
+	return false;
+}
+
+bool BinaryEditor::getDynsymSection(Section & section)
+{
+	for (const Section & sec : _binary->sections())
+	{
+		if (sec.type() == ELF_SECTION_TYPES::SHT_DYNSYM && sec.name() == ".dynsym")
 		{
 			section = sec;
 			return true;
@@ -320,6 +348,24 @@ void BinaryEditor::getPLTGOTRelocations(std::vector<Relocation *> & pltgotRel)
 		if (reloc)
 		{
 			pltgotRel.push_back(reloc);
+		}
+	}
+}
+
+void BinaryEditor::getAllRelocations(std::vector<Relocation *> & allrels)
+{
+	std::list<uint64_t> plotTabEntryAddress;
+	for (auto reloc : _binary->relocations())
+	{
+		plotTabEntryAddress.push_back(reloc.address());
+	}
+
+	for (uint64_t addr : plotTabEntryAddress)
+	{
+		Relocation * reloc = _binary->get_relocation(addr);
+		if (reloc)
+		{
+			allrels.push_back(reloc);
 		}
 	}
 }

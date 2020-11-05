@@ -23,7 +23,6 @@
 #include <unistd.h>
 #include <sys/stat.h>
 #include "BinaryAnalyzer.h"
-#include "ResortGotEntryPolicy.h"
 #include "BindNowPolicy.h"
 #include "StartInjectPolicy.h"
 #include "Config.h"
@@ -35,7 +34,6 @@ static std::vector<PatchPolicy *> s_policys;
 
 void loadPolicys()
 {
-	s_policys.push_back(new RandomPLTGOTPolicy);
 	if (Config::instance()->isPolicyEnabled(enableNXPolicy::name()))
 	{
 			s_policys.push_back(new enableNXPolicy());
@@ -44,9 +42,9 @@ void loadPolicys()
 	{
 			s_policys.push_back(new BindNowPolicy());
 	}
-	if (Config::instance()->isPolicyEnabled(ResortGotEntryPolicy::name()))
+	if (Config::instance()->isPolicyEnabled(RandomPLTGOTPolicy::name()))
 	{
-		s_policys.push_back(new ResortGotEntryPolicy());
+		s_policys.push_back(new RandomPLTGOTPolicy());
 	}
 	if (Config::instance()->isPolicyEnabled(StartInjectPolicy::name()))
 	{
