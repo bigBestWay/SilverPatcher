@@ -91,7 +91,7 @@ cp cJSON.h /usr/local/include
 cp libCJsonObject.a /usr/local/lib
 ```
 ##使用
-通过修改config.json配置文件，选择想要使用的策略。
+通过修改config.json配置文件，更新libc相关偏移量以及选择想要使用的策略。
 ```
 {
     "pwn_property":{
@@ -109,8 +109,8 @@ cp libCJsonObject.a /usr/local/lib
                 "level":"SECURE",
                 "enable":1
             },
-            "ResortGotEntryPolicy":{
-                "comment":"重新排列GOT表项，抵抗GOT劫持。ELF文件大小不变，但变动较大。",
+            "RandomPLTGOTPolicy":{
+                "comment":"重新排列PLT/GOT表项。ELF文件大小不变，但变动较大。",
                 "level":"LOW",
                 "enable":1
             },
@@ -148,18 +148,26 @@ cp libCJsonObject.a /usr/local/lib
                         },
                         "setNoBufStdout":{
                             "comment":"设置STDOUT为不缓冲，这个是配合Capture01CodeProvider使用的。",
+                            "enable":0
+                        },
+                        "nopbinsh":{
+                            "comment":"nop掉libc中的binsh字符串，使system/oneshot失效",
                             "enable":1
                         }
                     },
+                    "ClearBackdoorCodeProvider":{
+                        "comment":"当需要清理后门的时候打上一轮即可，下一轮去掉。",
+                        "enable":0
+                    },
                     "BindShellCodeProvider":{
                         "comment":"fork子进程，提供bindtcp_shell，密码固定是8字节。",
-                        "enable":1,
+                        "enable":0,
                         "port":56789,
                         "password":"abcdefgh"
                     },
                     "Capture01CodeProvider":{
                         "comment":"fork子进程，抓取输入输出并保存到文件。",
-                        "enable":1,
+                        "enable":0,
                         "forward_host":"117.78.9.13",
                         "forward_port":56789
                     }
@@ -183,21 +191,23 @@ cp libCJsonObject.a /usr/local/lib
         }
         ,
     "libcdb":{
-        "comment":"libcdb内容不需要修改。",
+        "comment":"libcdb内容需要根据比赛环境即时修改",
         "2.23":{
             "x64":{
                 "global_max_fast":"0x3c67f8",
                 "malloc":"0x84130",
-                "__libc_start_main":"0x20740",
+                "__libc_start_main":"0x20750",
                 "free":"0x844f0",
-                "stdout":"0x3c5620"
+                "_IO_2_1_stdout_":"0x3c5620",
+                "str_bin_sh":"0x18ce17"
             },
             "x32":{
                 "global_max_fast":"0x1b38e0",
                 "malloc":"0x1f5110",
-                "__libc_start_main":"0x18540",
+                "__libc_start_main":"0x18550",
                 "free":"0x1f5180",
-                "stdout":"0x1b2d60"
+                "_IO_2_1_stdout_":"0x1b2d60",
+                "str_bin_sh":"0x15bb0b"
             }
         },
         "2.27": {
@@ -206,16 +216,18 @@ cp libCJsonObject.a /usr/local/lib
                 "malloc":"0x40c4b0",
                 "__libc_start_main":"0x21ab0",
                 "free":"0x40c620",
-                "stdout":"0x3ec760",
-                "tcache_count":"0x3eb2e0"
+                "_IO_2_1_stdout_":"0x3ec760",
+                "tcache_count":"0x3eb2e0",
+                "str_bin_sh":""
             },
             "X32":{
                 "global_max_fast":"0x1d9904",
                 "malloc":"0x2067f0",
                 "__libc_start_main":"0x18d90",
                 "free":"0x206940",
-                "stdout":"0x1d8d80",
-                "tcache_count":"0x1d8158"
+                "_IO_2_1_stdout_":"0x1d8d80",
+                "tcache_count":"0x1d8158",
+                "str_bin_sh":""
             }
         }
     }
