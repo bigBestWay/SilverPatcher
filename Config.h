@@ -8,7 +8,8 @@
 #define MALLOC "malloc"
 #define FREE   "free"
 #define TCACHE_COUNT "tcache_count"
-#define STDOUT "stdout"
+#define STDOUT "_IO_2_1_stdout_"
+#define BINSH "str_bin_sh"
 
 class JsonWrapper;
 class Config

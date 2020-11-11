@@ -39,6 +39,15 @@ void ModifyLibcCodeProvider::getCode(uint64_t virtualAddress, std::vector<uint8_
 		offset += closeTca.size();
 		allcode.insert(allcode.end(), closeTca.begin(), closeTca.end());
 	}
+
+	if (Config::instance()->isProviderActionEnabled(StartInjectPolicy::name(), ModifyLibcCodeProvider::name(), "nopbinsh"))
+	{
+		std::cout << "++ nopbinsh" << std::endl;
+		std::vector<uint8_t> code;
+		nopbinsh(virtualAddress + offset, code);
+		offset += code.size();
+		allcode.insert(allcode.end(), code.begin(), code.end());
+	}
 }
 
 //返回寻找libc基址的代码，IMAGE基址放在rbp/ebp中，start的代码都是将rbp/ebp清零而没有使用，比较安全
@@ -425,6 +434,67 @@ void ModifyLibcCodeProvider::setNoBufStdout(uint64_t virtual_addr, std::vector<u
 		insn = "push ebp";
 		insn += ";add ebp, " + stdout_offset;
 		insn += ";or dword ptr [ebp], 2";
+		insn += ";pop ebp";
+	}
+	std::vector<uint8_t> code;
+	KSEngine::instance()->assemble(insn.c_str(), virtual_addr, code);
+	if (code.empty())
+	{
+		return;
+	}
+	allcode.insert(allcode.end(), code.begin(), code.end());
+}
+
+void ModifyLibcCodeProvider::nopbinsh(uint64_t virtual_addr, std::vector<uint8_t> & allcode)
+{
+	std::string binsh_offset = Config::instance()->getLibcAttrString(BINSH);
+	if (binsh_offset.empty())
+	{
+		std::cout << BINSH" config not found." << std::endl;
+		return;
+	}
+
+	std::string insn;
+	bool isX64 = BinaryEditor::instance()->getPlatform() == ELF_CLASS::ELFCLASS64;
+	if (isX64)
+	{
+		//mprotect()
+		insn = "push rbp";
+		insn += ";add rbp," + binsh_offset;
+		insn += ";mov rdi,rbp";
+		insn += ";and rdi,0xfffffffffffff000";
+		insn += ";mov rsi,0x1000";
+		insn += ";xor rdx,rdx";
+		insn += ";xor rax,rax";
+		insn += ";mov dl, 7";//RWX
+		insn += ";mov al, 0xa";
+		insn += ";syscall";
+		insn += ";mov qword ptr [rbp], 0";
+		insn += ";mov dl, 5";//恢复权限
+		insn += ";mov al, 0xa";
+		insn += ";syscall";
+		insn += ";pop rbp";
+	}
+	else
+	{
+		insn = "push ebp";
+		insn += ";add ebp, " + binsh_offset;
+		insn += ";mov ebx,ebp";
+		insn += ";and ebx,0xfffff000";
+		insn += ";push 0x1000";
+		insn += ";pop ecx";
+		insn += ";push 7";
+		insn += ";pop edx";
+		insn += ";push 0x7d";
+		insn += ";pop eax";
+		insn += ";int 0x80";
+		insn += ";mov dword ptr [ebp],0";
+		insn += ";mov dword ptr [ebp+4],0";
+		insn += ";push 5";
+		insn += ";pop edx";
+		insn += ";push 0x7d";
+		insn += ";pop eax";
+		insn += ";int 0x80";
 		insn += ";pop ebp";
 	}
 	std::vector<uint8_t> code;
