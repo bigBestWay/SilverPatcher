@@ -96,7 +96,7 @@
         }
         ,
     "libcdb":{
-        "comment":"libcdb内容不需要修改。",
+        "comment":"libcdb内容需要根据比赛环境即时修改",
         "2.23":{
             "x64":{
                 "global_max_fast":"0x3c67f8",
