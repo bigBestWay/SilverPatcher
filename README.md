@@ -227,7 +227,7 @@ cp libCJsonObject.a /usr/local/lib
             }
         },
         "2.27": {
-            "X64":{
+            "x64":{
                 "global_max_fast":"0x3ed940",
                 "malloc":"0x40c4b0",
                 "__libc_start_main":"0x21ab0",
@@ -236,7 +236,7 @@ cp libCJsonObject.a /usr/local/lib
                 "tcache_count":"0x3eb2e0",
                 "str_bin_sh":""
             },
-            "X32":{
+            "x32":{
                 "global_max_fast":"0x1d9904",
                 "malloc":"0x2067f0",
                 "__libc_start_main":"0x18d90",
