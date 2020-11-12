@@ -22,6 +22,11 @@ cp -r include/ /usr/local/
 cp -r lib/ /usr/local/
 ```
 或者下载源码，编译安装（推荐）  
+```
+wget https://github.com/lief-project/LIEF/archive/0.10.1.tar.gz
+tar xvf 0.10.1.tar.gz
+cd LIEF-0.10.1
+```
 LIEF在x32 NO-PIE的情况下，添加segment会导致BUG：
 ```
 Inconsistency detected by ld.so: rtld.c: 1191: dl_main: Assertion `GL(dl_rtld_map).l_libname' failed!
@@ -31,16 +36,17 @@ Inconsistency detected by ld.so: rtld.c: 1191: dl_main: Assertion `GL(dl_rtld_ma
 ```
 src/ELF/Binary.tcc 631行:
 -Segment& segment_added = this->add(new_segment);
-+Segment * segment_added = nullptr;
++Segment * p_segment_added = nullptr;
 +if(this->type() == ELF_CLASS::ELFCLASS32 && this->header().file_type() != E_TYPE::ET_DYN)
 +{
 +  Segment & note = this->get(SEGMENT_TYPES::PT_NOTE);
-+  segment_added = &this->replace(new_segment,note);
++  p_segment_added = &this->replace(new_segment,note);
 +}
 +else
 +{
-+  segment_added = &this->add(new_segment);
++  p_segment_added = &this->add(new_segment);
 +}
++Segment& segment_added = *p_segment_added;
 ```
 打完补丁后
 ```
@@ -53,10 +59,13 @@ https://github.com/dyninst/dyninst/archive/v10.1.0.tar.gz
 一个非常庞大、复杂、历史悠久的库，安装起来可能比较麻烦...  
 首先装一些基础库
 ```
-apt-get install cmake libblkid-dev e2fslibs-dev libboost-all-dev libaudit-dev texlive-latex-base libelf-dev libdwarf-dev libiberty-dev
+apt-get install cmake libblkid-dev e2fslibs-dev libboost-all-dev libaudit-dev texlive-latex-base libelf-dev libdwarf-dev libiberty-dev m4
 ```
 make过程中会主动下载TBB、ElfUtils等源码进行编译
 ```
+wget https://github.com/dyninst/dyninst/archive/v10.1.0.tar.gz  
+tar xvf v10.1.0.tar.gz 
+cd dyninst-10.1.0
 cmake .
 make -j4
 make install
@@ -65,6 +74,9 @@ make install
 https://github.com/keystone-engine/keystone  
 下载源码，编译安装
 ```
+wget https://github.com/keystone-engine/keystone/archive/0.9.2.tar.gz
+tar xvf 0.9.2.tar.gz
+cd keystone-0.9.2
 cmake .
 make -j4
 make install
@@ -76,12 +88,16 @@ apt install libcapstone3 libcapstone-dev
 ```
 或者下载源码，编译安装
 ```
+wget https://github.com/aquynh/capstone/archive/4.0.2.tar.gz
+tar xvf 4.0.2.tar.gz
+cd capstone-4.0.2
 ./make.sh
 ```
 ###CJsonObject  
 https://github.com/Bwar/CJsonObject  
 这个工程稍微比较麻烦，因为开发者只提供了代码没有想发布链接库的意思，需要我们手工编译生成。
 ```
+git clone https://github.com/Bwar/CJsonObject.git
 cd demo
 make
 cd ..
