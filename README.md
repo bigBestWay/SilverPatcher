@@ -13,15 +13,7 @@ apt install cmake
 ```
 ###LIEF 0.10.1  
 https://github.com/lief-project/LIEF  
-直接下载已编译好的SDK包(x86_64)  
-```
-wget https://github.com/lief-project/LIEF/releases/download/0.10.1/LIEF-0.10.1-Linux.tar.gz
-tar xvf LIEF-0.10.1-Linux.tar.gz
-cd LIEF-0.10.1-Linux
-cp -r include/ /usr/local/
-cp -r lib/ /usr/local/
-```
-或者下载源码，编译安装（推荐）  
+下载源码，编译安装  
 ```
 wget https://github.com/lief-project/LIEF/archive/0.10.1.tar.gz
 tar xvf 0.10.1.tar.gz
