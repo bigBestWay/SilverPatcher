@@ -12,7 +12,7 @@ bool BinaryEditor::init(const std::string & elfname)
 		std::cerr << e.what() << std::endl;
 		return false;
 	}
-	//loadCodeDefaultCaves();
+	loadCodeDefaultCaves();
 	return true;
 }
 
@@ -126,6 +126,7 @@ void BinaryEditor::patch_address(uint64_t address, const std::vector<uint8_t> & 
 */
 void BinaryEditor::loadCodeDefaultCaves()
 {
+	/*
 	for (Segment & segment : _binary->segments())
 	{
 		SEGMENT_TYPES type = segment.type();
@@ -136,6 +137,20 @@ void BinaryEditor::loadCodeDefaultCaves()
 			cave.size = segment.virtual_size();
 			segment.add(ELF_SEGMENT_FLAGS::PF_X);
 			InstrumentManager::instance()->addCodeCave(cave);
+			std::cout << "load cave EH_FRAME size " << cave.size << std::endl;
+		}
+	}*/
+	for (const Section & section : _binary->sections())
+	{
+		const std::string & name = section.name();
+		if (name == ".eh_frame" || name == ".eh_frame_hdr")
+		{
+			CodeCave cave;
+			cave.virtual_addr = section.virtual_address();
+			cave.size = section.size();
+			//section.add(ELF_SEGMENT_FLAGS::PF_X);
+			InstrumentManager::instance()->addCodeCave(cave);
+			std::cout << "LOAD cave " << name << " size: " << cave.size << std::endl;
 		}
 	}
 }

@@ -26,6 +26,7 @@ void StartInjectPolicy::do_patch()
 #if 1
 		std::cout << "Patch code:" << std::endl;
 		CSEngine::instance()->disasmShow(unit.code, unit.address);
+		std::cout << "Code size: " << unit.code.size() << std::endl;
 #endif
 		BinaryEditor::instance()->patch_address(unit.address, unit.code);
 	}
