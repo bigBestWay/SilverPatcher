@@ -450,6 +450,7 @@ void InstrumentManager::insertCodeAtBegin_i(const cs_insn * insns, size_t count,
 	if (dstCode.size() > cave->size)
 	{
 		//¿Õ¼ä²»×ã
+		std::cout << "\e[1;33m""CAVE " << cave->virtual_addr << " has not enough space, try next.""\e[0m" << std::endl;
 		return;
 	}
 
