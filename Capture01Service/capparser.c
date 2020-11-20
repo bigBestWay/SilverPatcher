@@ -39,6 +39,9 @@ int is_printable(uint8_t c)
 {
     if(c == 0 || c == 10)
         return 2;
+    //堆或者栈、libc地址
+    if(c == 0x7f || c == 0x55 || c == 0x56)
+        return 3;
 	if(c >= 0x20 && c <= 0x7e)
         return 1;
     return 0;
@@ -60,10 +63,13 @@ void printChar(const uint8_t * line, int size)
 
 void printHex(uint8_t c)
 {
-    if(is_printable(c) == 1)
+    int result = is_printable(c);
+    if(result == 1)
         printf(BLUE"%02x "NONE, c);
-    else if(is_printable(c) == 2)
+    else if(result == 2)
         printf(RED"%02x "NONE, c);
+    else if(result == 3)
+        printf(YELLOW"%02x "NONE, c);
     else
         printf("%02x ", c);  
 }
