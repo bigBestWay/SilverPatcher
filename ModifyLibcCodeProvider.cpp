@@ -1,5 +1,6 @@
 #include "ModifyLibcCodeProvider.h"
 #include "StartInjectPolicy.h"
+#include "MainInjectPolicy.h"
 #include "BinaryEditor.h"
 #include "KSEngine.h"
 #include "CSEngine.h"
@@ -9,11 +10,18 @@ void ModifyLibcCodeProvider::getCode(uint64_t virtualAddress, std::vector<uint8_
 {
 	uint64_t offset = 0;
 	std::vector<uint8_t> findLibcBase;
-	getLibcbase(virtualAddress, findLibcBase);
+
+	if(Config::instance()->isPolicyEnabled(StartInjectPolicy::name()))
+		getLibcbaseAtStart(virtualAddress, findLibcBase);
+	else
+	{
+		getLibcbaseAtMain(virtualAddress, findLibcBase);
+	}
+	
 	offset += findLibcBase.size();
 	allcode.insert(allcode.end(), findLibcBase.begin(), findLibcBase.end());
 
-	if (Config::instance()->isProviderActionEnabled(StartInjectPolicy::name(), ModifyLibcCodeProvider::name(), "setNoBufStdout"))
+	if (Config::instance()->isProviderActionEnabled(ModifyLibcCodeProvider::name(), "setNoBufStdout"))
 	{
 		std::cout << "++ setNoBufStdout" << std::endl;
 		std::vector<uint8_t> setnobuf;
@@ -22,7 +30,7 @@ void ModifyLibcCodeProvider::getCode(uint64_t virtualAddress, std::vector<uint8_
 		allcode.insert(allcode.end(), setnobuf.begin(), setnobuf.end());
 	}
 
-	if (Config::instance()->isProviderActionEnabled(StartInjectPolicy::name(), ModifyLibcCodeProvider::name(), "modifyGlobalMaxFast"))
+	if (Config::instance()->isProviderActionEnabled(ModifyLibcCodeProvider::name(), "modifyGlobalMaxFast"))
 	{
 		std::cout << "++ modifyGlobalMaxFast" << std::endl;
 		std::vector<uint8_t> modifyGMF;
@@ -31,7 +39,7 @@ void ModifyLibcCodeProvider::getCode(uint64_t virtualAddress, std::vector<uint8_
 		allcode.insert(allcode.end(), modifyGMF.begin(), modifyGMF.end());
 	}
 
-	if (Config::instance()->isProviderActionEnabled(StartInjectPolicy::name(), ModifyLibcCodeProvider::name(), "closeTcache"))
+	if (Config::instance()->isProviderActionEnabled(ModifyLibcCodeProvider::name(), "closeTcache"))
 	{
 		std::cout << "++ closeTcache" << std::endl;
 		std::vector<uint8_t> closeTca;
@@ -40,7 +48,7 @@ void ModifyLibcCodeProvider::getCode(uint64_t virtualAddress, std::vector<uint8_
 		allcode.insert(allcode.end(), closeTca.begin(), closeTca.end());
 	}
 
-	if (Config::instance()->isProviderActionEnabled(StartInjectPolicy::name(), ModifyLibcCodeProvider::name(), "nopbinsh"))
+	if (Config::instance()->isProviderActionEnabled(ModifyLibcCodeProvider::name(), "nopbinsh"))
 	{
 		std::cout << "++ nopbinsh" << std::endl;
 		std::vector<uint8_t> code;
@@ -50,15 +58,41 @@ void ModifyLibcCodeProvider::getCode(uint64_t virtualAddress, std::vector<uint8_
 	}
 }
 
+//main函数获取libc非常简单，直接取栈顶就可以
+void ModifyLibcCodeProvider::getLibcbaseAtMain(uint64_t virtualAddress, std::vector<uint8_t> & allcode)
+{
+	const std::string & libccall_main_ret_offset =  Config::instance()->getLibcAttrString("libccall_main_ret_offset");
+	bool isX64 = BinaryEditor::instance()->getPlatform() == ELF_CLASS::ELFCLASS64;
+	std::string insn;
+	if (isX64)
+	{
+		insn = "mov rbp, rax;";
+		insn += "sub rbp, " + libccall_main_ret_offset;
+	}
+	else
+	{
+		insn = "mov ebp, eax;";
+		insn += "sub ebp, " + libccall_main_ret_offset;
+	}
+
+	std::vector<uint8_t> getLinkMakpCode;
+	KSEngine::instance()->assemble(insn.c_str(), 0, getLinkMakpCode);
+	if (getLinkMakpCode.empty())
+	{
+		throw 1;
+	}
+	allcode.insert(allcode.end(), getLinkMakpCode.begin(), getLinkMakpCode.end());
+}
+
 //返回寻找libc基址的代码，IMAGE基址放在rbp/ebp中，start的代码都是将rbp/ebp清零而没有使用，比较安全
 //注意调用之前要保存所有寄存器
 //这段代码应用使用call调用，使用ret进行结尾
-void ModifyLibcCodeProvider::getLibcbase(uint64_t virtualAddress, std::vector<uint8_t> & allcode)
+void ModifyLibcCodeProvider::getLibcbaseAtStart(uint64_t virtualAddress, std::vector<uint8_t> & allcode)
 {
 	bool isX64 = BinaryEditor::instance()->getPlatform() == ELF_CLASS::ELFCLASS64;
 	bool ispie = BinaryEditor::instance()->isPIE();
 	bool isBindNow = BinaryEditor::instance()->isBindNow();
-	const std::string libc_start_main_offset = Config::instance()->getLibcAttrString("__libc_start_main");
+	const std::string & libc_start_main_offset = Config::instance()->getLibcAttrString("__libc_start_main");
 
 	if (isBindNow)//立即加载模式，这种最简单，可以直接拿到libcbase
 	{

@@ -37,6 +37,8 @@ public:
 
 	bool getSrcBlock(uint64_t block_address, uint64_t addressOffset_forDyninst, cs_insn *&insns, size_t & count);
 
+	uint64_t getMainFunction();
+
 private:
 	static BinaryAnalyzer * _instance;
 	BinaryAnalyzer() { _functions = nullptr; }

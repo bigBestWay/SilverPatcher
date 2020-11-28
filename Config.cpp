@@ -39,14 +39,14 @@ Config::~Config()
 std::string Config::getLibcAttrString(const std::string & k) const
 {
 	std::string str;
-	_json->get()["libcdb"][_libc_version][_platform].Get(k, str);
+	_json->get()["libcdb"][_platform].Get(k, str);
 	return str;
 }
 
 uint64_t Config::getLibcAttrInt(const std::string & k) const
 {
 	uint64 val = 0;
-	_json->get()["libcdb"][_libc_version][_platform].Get(k, val);
+	_json->get()["libcdb"][_platform].Get(k, val);
 	return val;
 }
 
@@ -57,24 +57,24 @@ bool Config::isPolicyEnabled(const std::string & name) const
 	return val != 0;
 }
 
-bool Config::isProviderEnabled(const std::string & policyName, const std::string & providerName) const
+bool Config::isProviderEnabled(const std::string & providerName) const
 {
 	int val = 0;
-	_json->get()["policys"][policyName]["codeProvider"][providerName].Get("enable", val);
+	_json->get()["codeProvider"][providerName].Get("enable", val);
 	return val != 0;
 }
 
-bool Config::isProviderActionEnabled(const std::string & policyName, const std::string & providerName, const std::string & action) const
+bool Config::isProviderActionEnabled(const std::string & providerName, const std::string & action) const
 {
 	int val = 0;
-	_json->get()["policys"][policyName]["codeProvider"][providerName][action].Get("enable", val);
+	_json->get()["codeProvider"][providerName][action].Get("enable", val);
 	return val != 0;
 }
 
 std::string Config::getGlobalMaxFastValue() const
 {
 	std::string val;
-	_json->get()["policys"]["StartInjectPolicy"]["codeProvider"]["ModifyLibcCodeProvider"]["modifyGlobalMaxFast"].Get("value", val);
+	_json->get()["codeProvider"]["ModifyLibcCodeProvider"]["modifyGlobalMaxFast"].Get("value", val);
 	return val;
 }
 
@@ -120,6 +120,9 @@ void Config::destroy()
 
 void Config::init(const std::string & filename)
 {
+	if(_json != nullptr)
+		return;
+		
 	FILE * fp = fopen(filename.c_str(), "r");
 	if (fp)
 	{
@@ -139,7 +142,6 @@ void Config::init(const std::string & filename)
 		{
 			_platform = "x32";
 		}
-		_json->get()["pwn_property"].Get("libc_version", _libc_version);
 	}
 	else
 	{
@@ -150,21 +152,21 @@ void Config::init(const std::string & filename)
 uint16_t Config::getBindShellPort()const
 {
 	uint32_t val;
-	_json->get()["policys"]["StartInjectPolicy"]["codeProvider"]["BindShellCodeProvider"].Get("port", val);
+	_json->get()["codeProvider"]["BindShellCodeProvider"].Get("port", val);
 	return (uint16_t)val;
 }
 
 std::string Config::getBindShellPasswd()const
 {
 	std::string val;
-	_json->get()["policys"]["StartInjectPolicy"]["codeProvider"]["BindShellCodeProvider"].Get("password", val);
+	_json->get()["codeProvider"]["BindShellCodeProvider"].Get("password", val);
 	return val;
 }
 
 std::string Config::getCaptureForwardPort()const
 {
 	uint32_t port;
-	_json->get()["policys"]["StartInjectPolicy"]["codeProvider"]["Capture01CodeProvider"].Get("forward_port", port);
+	_json->get()["codeProvider"]["Capture01CodeProvider"].Get("forward_port", port);
 	char buf[255] = {0};
 	uint8_t s1 = (port & 0x0000ff00)>>8;
 	uint8_t s2 = (port & 0xff);
@@ -175,7 +177,7 @@ std::string Config::getCaptureForwardPort()const
 std::string Config::getCaptureForwardHost()const
 {
 	std::string val;
-	_json->get()["policys"]["StartInjectPolicy"]["codeProvider"]["Capture01CodeProvider"].Get("forward_host", val);
+	_json->get()["codeProvider"]["Capture01CodeProvider"].Get("forward_host", val);
 
 	std::string::size_type pos1 = val.find('.');
 	uint8_t s1 = (uint8_t)std::stoul(val.substr(0, pos1));

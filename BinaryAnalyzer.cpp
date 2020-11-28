@@ -15,6 +15,7 @@
 
 #include "CSEngine.h"
 #include "BinaryEditor.h"
+#include "UnicornEngine.h"
 
 using namespace Dyninst;
 using namespace Dyninst::InstructionAPI;
@@ -53,6 +54,9 @@ static void findSource(PatchBlock * blk, ParseAPI::EdgeTypeEnum type, std::vecto
 
 bool BinaryAnalyzer::init(const char * elfname)
 {
+	if(_functions != nullptr)
+		return true;
+		
 	BPatch *bpatch = new BPatch;
 	BPatch_addressSpace *app = bpatch->openBinary(elfname);
 	if (app == NULL)
@@ -215,5 +219,39 @@ bool BinaryAnalyzer::getSrcBlock(uint64_t block_address, uint64_t addressOffset_
 		}
 	}
 	return false;
+}
+
+uint64_t BinaryAnalyzer::getMainFunction()
+{
+	uint64_t entrypoint = BinaryEditor::instance()->entryPoint();
+	const std::vector<uint8_t> & code = BinaryEditor::instance()->get_content(entrypoint, 0x1000);
+	cs_insn * tmpinsn = nullptr;
+	size_t n = CSEngine::instance()->disasm(code, entrypoint, &tmpinsn);
+
+	std::vector<uint8_t> simulate_code;
+	size_t i = 0;
+	for (; i < n; ++i)
+	{
+		const cs_insn & insn = tmpinsn[i];
+		//CSEngine::instance()->disasmShow(insn);
+		//start里就一个call函数
+		if (insn.id == X86_INS_CALL)
+		{
+			break;
+		}
+		simulate_code.insert(simulate_code.end(), insn.bytes, insn.bytes + insn.size);
+	}
+
+	cs_free(tmpinsn, n);
+
+	uint64_t mainaddr = 0;
+	if (UnicornEngine::instance()->simulate_start(simulate_code, mainaddr) != 0)
+	{
+		std::cerr << "simulate_start fail.\n";
+	}
+
+	std::cout << "get main " << std::hex << mainaddr << std::endl;
+
+	return mainaddr;
 }
 

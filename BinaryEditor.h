@@ -5,13 +5,20 @@ using namespace LIEF::ELF;
 
 #define DEFAULT_SECTION_SIZE 4096
 
+struct Elf;
 class BinaryEditor
 {
-private:
-	BinaryEditor(){}
-	~BinaryEditor() {}
-	static BinaryEditor * _instance;
 public:
+	enum PatchMode
+	{
+		LIEF_PATCH_MODE = 0,
+		LIBELF_PATCH_MODE
+	};
+
+	class NotSupportException
+	{
+	};
+
 	static BinaryEditor * instance()
 	{
 		if (_instance == nullptr)
@@ -27,13 +34,20 @@ public:
 		_instance = nullptr;
 	}
 
-	bool init(const std::string & elfname);
+	static void set_pathmode(PatchMode mode)
+	{
+		_mode = mode;
+	}
 
-	bool getSegment(SEGMENT_TYPES type, Segment * & out);
+	bool init(const std::string & elfname);
 
 	bool getSegment(uint64_t addr, Segment * &out);
 
-	void writeFile(const std::string & elfname);
+	bool enableNX();
+
+	bool enableBindnow();
+
+	void writeFile();
 
 	bool getSectionByType(ELF_SECTION_TYPES type, Section * & out);
 
@@ -42,11 +56,6 @@ public:
 	Relocation * getRelocation(const std::string & name);
 
 	Relocation * getRelocation(uint64_t address);
-
-	void remove(DynamicEntry & entry)
-	{
-		_binary->remove(entry);
-	}
 
 	DynamicEntry & add(DynamicEntry & entry)
 	{
@@ -97,18 +106,6 @@ public:
 	bool getPLTGOTSection(Section & section);
 	//.got
 	bool getGOTSection(Section & section);
-	//.text
-	bool getTextSection(Section & section);
-	//.rela.dyn
-	bool getReladynSection(Section & section);
-	//.rel.dyn
-	bool getReldynSection(Section & section);
-	//.dynstr
-	bool getDynstrSection(Section & section);
-	//.dynsym
-	bool getDynsymSection(Section & section);
-
-	void getPLTGOTRelocations(std::vector<Relocation *> & pltgotRel);
 
 	void getAllRelocations(std::vector<Relocation *> & allrels);
 
@@ -117,19 +114,21 @@ public:
 		return _binary->text_section();
 	}
 
-	std::vector<uint8_t> get_content(uint64_t address, uint64_t size)
-	{
-		return _binary->get_content_from_virtual_address(address, size);
-	}
+	std::vector<uint8_t> get_content(uint64_t address, uint64_t size);
 
 	uint32_t getPLTEntrySize();
 
 	uint64_t getGotSlotValue(uint64_t address);
 private:
-	void loadCodeDefaultCaves();
 	uint32_t getDWORD(uint64_t address);
 	uint64_t getQWORD(uint64_t address);
 private:
+	BinaryEditor(){}
+	~BinaryEditor(){}
+	static BinaryEditor * _instance;
+	static PatchMode _mode;
+private:
 	std::unique_ptr<Binary> _binary;
+	std::string _outfile;
 };
 

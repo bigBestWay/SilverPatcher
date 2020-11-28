@@ -29,18 +29,19 @@
 #include "DisableFreePolicy.h"
 #include "FmtVulScanRepairPolicy.h"
 #include "RandomPLTGOTPolicy.h"
+#include "MainInjectPolicy.h"
 
 static std::vector<PatchPolicy *> s_policys;
 
-void loadPolicys()
+static void loadPolicys()
 {
 	if (Config::instance()->isPolicyEnabled(enableNXPolicy::name()))
 	{
-			s_policys.push_back(new enableNXPolicy());
+		s_policys.push_back(new enableNXPolicy());
 	}
 	if (Config::instance()->isPolicyEnabled(BindNowPolicy::name()))
 	{
-			s_policys.push_back(new BindNowPolicy());
+		s_policys.push_back(new BindNowPolicy());
 	}
 	if (Config::instance()->isPolicyEnabled(RandomPLTGOTPolicy::name()))
 	{
@@ -49,6 +50,10 @@ void loadPolicys()
 	if (Config::instance()->isPolicyEnabled(StartInjectPolicy::name()))
 	{
 		s_policys.push_back(new StartInjectPolicy());
+	}
+	if (Config::instance()->isPolicyEnabled(MainInjectPolicy::name()))
+	{
+		s_policys.push_back(new MainInjectPolicy());
 	}
 	if (Config::instance()->isPolicyEnabled(setRPathPolicy::name()))
 	{
@@ -68,7 +73,7 @@ void loadPolicys()
 	}
 }
 
-void execPolicys()
+static void execPolicys()
 {
 	RiskLevel level = SECURE;
 	for (size_t i = 0; i < s_policys.size(); ++i)
@@ -98,7 +103,29 @@ void execPolicys()
 	}
 }
 
-void usage(const char * programe)
+static void do_patch(const char * elfname, const std::string & configName)
+{
+	std::string elfIn = elfname;
+	if (!BinaryEditor::instance()->init(elfIn))
+	{
+		std::cerr << "BinaryEditor parse failed" << std::endl;
+		return;
+	}
+
+	Config::instance()->init(configName);
+
+	loadPolicys();
+	if (!BinaryAnalyzer::instance()->init(elfname))
+	{
+		std::cerr << "BinaryAnalyzer parse failed" << std::endl;
+		return;
+	}
+	execPolicys();
+
+	BinaryEditor::instance()->writeFile();
+}
+
+static void usage(const char * programe)
 {
 	std::cerr << "Usage: " << programe << " <binary> [config]" << std::endl;
 	std::cerr << "       [config]: json format, config.json by default." << std::endl;
@@ -128,30 +155,20 @@ int main(int argc, char *argv[]) {
 		return 1;
 	}
 
-	std::string elfIn = argv[1];
-	if (!BinaryEditor::instance()->init(elfIn))
+	try
 	{
-		std::cerr << "BinaryEditor parse failed" << std::endl;
-		return 1;
+		do_patch(argv[1], configName);
 	}
-
-	Config::instance()->init(configName);
-
-	loadPolicys();
-
-	if (!BinaryAnalyzer::instance()->init(elfIn.c_str()))
+	catch(const BinaryEditor::NotSupportException & e)
 	{
-		std::cerr << "BinaryAnalyzer parse failed" << std::endl;
-		return 1;
+		BinaryEditor::destroy();
+		BinaryEditor::set_pathmode(BinaryEditor::LIEF_PATCH_MODE);
+		do_patch(argv[1], configName);
 	}
-
-	execPolicys();
-
-	std::string elfout = elfIn + "_patched";
-	unlink(elfout.c_str());
-	BinaryEditor::instance()->writeFile(elfout);
-	chmod(elfout.c_str(), S_IRWXU|S_IXGRP|S_IRGRP|S_IXOTH|S_IROTH);
-	std::cout << "\033[1m\033[31m" << elfout << " generated." << "\033[0m" << std::endl;
+	catch(...)
+	{
+		std::cerr << "Exception occured.\n";
+	}
 
 	return 0;
 }

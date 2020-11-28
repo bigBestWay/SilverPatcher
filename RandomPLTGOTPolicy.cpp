@@ -50,7 +50,7 @@ void RandomPLTGOTPolicy::do_patch()
 		{
 			std::cerr << "Not found .plt.got section" << std::endl;
 			return;
-		}	
+		}
 	}
 	else
 	{
@@ -153,13 +153,7 @@ void RandomPLTGOTPolicy::getCallPoint(uint64_t pltstub, std::vector<uint64_t> & 
 {
 	if (_text_insns == nullptr)
 	{
-		Section text;
-		if (!BinaryEditor::instance()->getTextSection(text))
-		{
-			std::cerr << "Not found .text sectioin" << std::endl;
-			return;
-		}
-
+		const Section & text = BinaryEditor::instance()->textSection();
 		const std::vector<uint8_t> & data = text.content();
 		_insn_count = CSEngine::instance()->disasm(data, text.virtual_address(), &_text_insns);
 	}

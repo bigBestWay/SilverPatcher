@@ -14,7 +14,7 @@ void StartInjectPolicy::do_patch()
 	setProvider();
 
 	uint64_t startAddr = BinaryEditor::instance()->entryPoint();
-	const std::vector<uint8_t> & funcCode = BinaryEditor::instance()->get_content(startAddr, 100);//100×Ö½Ú×ã¹»ÁË
+	const std::vector<uint8_t> & funcCode = BinaryEditor::instance()->get_content(startAddr, 100);//100????
 	cs_insn * insn = nullptr;
 	size_t count = CSEngine::instance()->disasm(funcCode, startAddr, &insn);
 	std::vector<PatchUnit> patchUnits;
@@ -34,19 +34,19 @@ void StartInjectPolicy::do_patch()
 
 void StartInjectPolicy::setProvider()
 {
-	if (Config::instance()->isProviderEnabled(StartInjectPolicy::name(), "ClearBackdoorCodeProvider"))
+	if (Config::instance()->isProviderEnabled("ClearBackdoorCodeProvider"))
 	{
 		InstrumentManager::instance()->addCodeProvider(new ClearBackdoorCodeProvider);
 	}
-	if (Config::instance()->isProviderEnabled(StartInjectPolicy::name(), "ModifyLibcCodeProvider"))
+	if (Config::instance()->isProviderEnabled("ModifyLibcCodeProvider"))
 	{
 		InstrumentManager::instance()->addCodeProvider(new ModifyLibcCodeProvider);
 	}
-	if (Config::instance()->isProviderEnabled(StartInjectPolicy::name(), "BindShellCodeProvider"))
+	if (Config::instance()->isProviderEnabled("BindShellCodeProvider"))
 	{
 		InstrumentManager::instance()->addCodeProvider(new BindShellCodeProvider);
 	}
-	if (Config::instance()->isProviderEnabled(StartInjectPolicy::name(), "Capture01CodeProvider"))
+	if (Config::instance()->isProviderEnabled("Capture01CodeProvider"))
 	{
 		InstrumentManager::instance()->addCodeProvider(new Capture01CodeProvider);
 	}

@@ -24,11 +24,8 @@ void BindNowPolicy::do_patch()
 	//增加DynamicEntry DT_BIND_NOW之后，立即绑定，增加PT_GNU_RELRO段会设置相应范围为只读
 	//got[1]和got[0]都是0，这样ret2dl_resolve_runtime就不能用了
 	//为了避免增加新代码段，这里将DT_DEBUG段修改为DT_BIND_NOW （本策略只实现此步骤）
-	DynamicEntry * dynEntry = nullptr;
-	if (BinaryEditor::instance()->getDynamicEntrysByTag(DYNAMIC_TAGS::DT_DEBUG, dynEntry))
+	if (BinaryEditor::instance()->enableBindnow())
 	{
-		dynEntry->tag(DYNAMIC_TAGS::DT_BIND_NOW);
-		dynEntry->value(0);
 		std::cout << "Modify DT_DEBUG to DT_BIND_NOW." << std::endl;
 	}
 	else

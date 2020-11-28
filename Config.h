@@ -21,8 +21,8 @@ public:
 	std::string getLibcAttrString(const std::string & k)const;
 	uint64_t getLibcAttrInt(const std::string & k)const;
 	bool isPolicyEnabled(const std::string & name)const;
-	bool isProviderEnabled(const std::string & policyName, const std::string & providerName)const;
-	bool isProviderActionEnabled(const std::string & policyName, const std::string & providerName, const std::string & action)const;
+	bool isProviderEnabled(const std::string & providerName)const;
+	bool isProviderActionEnabled(const std::string & providerName, const std::string & action)const;
 	std::string getGlobalMaxFastValue()const;
 	void getFmtPatchConfig(std::map<uint64_t, std::string> & patchConfig);
 	uint16_t getBindShellPort()const;
@@ -35,7 +35,6 @@ private:
 private:
 	static Config * _instance;
 	JsonWrapper * _json;
-	std::string _libc_version;
 	std::string _platform;
 };
 

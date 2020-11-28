@@ -105,26 +105,15 @@ void InstrumentManager::generateJmpCode(const cs_insn * insns, size_t count, uin
 	newInsnBytes += riseCode.size();
 
 	//该跳转指令需要占用原来几条指令的空间？
-	std::string insnsToMove;
 	uint64_t moveInsnBytes = 0;
 	size_t insnIndex = 0;
 	//std::cout << "getJmpCodeBegin Old insns:" << std::endl;
+	std::vector<const cs_insn *> code2translate;
 	for (; insnIndex < count; ++insnIndex)
 	{
 		const cs_insn & insn = insns[insnIndex];
-		//如果操作数中有RIP，这个指令就迁移不了
-		if (CSEngine::instance()->isInsnOphasRIP(insn))
-		{
-			printf("0x%" PRIx64 ":\t%s\t%s\n", insn.address, insn.mnemonic, insn.op_str);
-			std::cerr << "OP has EIP/RIP, break." << std::endl;
-			throw 1;
-		}
 		moveInsnBytes += insn.size;
-		insnsToMove += insn.mnemonic;
-		insnsToMove += " ";
-		insnsToMove += insn.op_str;
-		insnsToMove += std::string(";");
-		//printf("0x%" PRIx64 ":\t%s\t%s\n", insn.address, insn.mnemonic, insn.op_str);
+		code2translate.push_back(&insn);
 		if (moveInsnBytes >= jmpToUpCode.size())
 		{
 			break;
@@ -133,7 +122,7 @@ void InstrumentManager::generateJmpCode(const cs_insn * insns, size_t count, uin
 
 	//在新位置将原来的指令翻译一遍
 	std::vector<uint8_t> insnsToMoveCodeNew;
-	KSEngine::instance()->assemble(insnsToMove.c_str(), cave->virtual_addr + newInsnBytes, insnsToMoveCodeNew);
+	translate(cave->virtual_addr + newInsnBytes, code2translate, insnsToMoveCodeNew);
 	if (insnsToMoveCodeNew.empty())
 	{
 		throw 1;
@@ -176,7 +165,7 @@ searchRetBlock:
 	size_t occupySize = 0;
 	uint64_t jmpToLowCodeAddr = 0;
 	std::vector<uint8_t> jmpToLowCode;
-	insnsToMove.clear();
+	std::string insnsToMove;
 	insnIndex = retBlockInsnsCount - 1;
 	while ((int)insnIndex >= 0)
 	{
@@ -300,27 +289,39 @@ void InstrumentManager::insertCodeAtBegin_i(const cs_insn * insns, size_t count,
 
 	uint64_t jmpBackAddr = 0;
 	uint64_t offset = 0;
+
+
+	//先插一条指令，获取栈顶到RAX
+	{
+		std::string get_ret_insn;
+		if (isX32)
+		{
+			get_ret_insn = "mov eax,[esp]";
+		}
+		else
+		{
+			get_ret_insn = "mov rax,[rsp]";
+		}
+
+		std::vector<uint8_t> get_ret_code;
+		KSEngine::instance()->assemble(get_ret_insn.c_str(), cave->virtual_addr, get_ret_code);
+		dstCode.insert(dstCode.end(), get_ret_code.begin(), get_ret_code.end());
+		offset += get_ret_code.size();
+	}
+
+
 	{
 		//该跳转指令需要占用原来几条指令的空间？
 		std::string insnsToMove;
+		std::vector<const cs_insn *> code2translate;
 		uint64_t moveInsnBytes = 0;
 		size_t insnIndex = 0;
 		//std::cout << "getJmpCodeBegin Old insns:" << std::endl;
 		for (; insnIndex < count; ++insnIndex)
 		{
 			const cs_insn & insn = insns[insnIndex];
-			//如果操作数中有RIP，这个指令就迁移不了
-			if (CSEngine::instance()->isInsnOphasRIP(insn))
-			{
-				printf("0x%" PRIx64 ":\t%s\t%s\n", insn.address, insn.mnemonic, insn.op_str);
-				std::cerr << "OP has EIP/RIP, break." << std::endl;
-				throw 1;
-			}
 			moveInsnBytes += insn.size;
-			insnsToMove += insn.mnemonic;
-			insnsToMove += " ";
-			insnsToMove += insn.op_str;
-			insnsToMove += std::string(";");
+			code2translate.push_back(&insn);
 			//printf("0x%" PRIx64 ":\t%s\t%s\n", insn.address, insn.mnemonic, insn.op_str);
 			if (moveInsnBytes >= jmpToCode.size())
 			{
@@ -329,7 +330,7 @@ void InstrumentManager::insertCodeAtBegin_i(const cs_insn * insns, size_t count,
 		}
 		//在新位置将原来的指令翻译一遍
 		std::vector<uint8_t> insnsToMoveCodeNew;
-		KSEngine::instance()->assemble(insnsToMove.c_str(), cave->virtual_addr, insnsToMoveCodeNew);
+		translate(cave->virtual_addr + offset, code2translate, insnsToMoveCodeNew);
 		if (insnsToMoveCodeNew.empty())
 		{
 			throw 1;
@@ -439,7 +440,7 @@ void InstrumentManager::insertCodeAtBegin_i(const cs_insn * insns, size_t count,
 		//pop r9 r8 rdi rsi rbp rsp rbx rdx rcx rax ret
 		std::vector<uint8_t> popallREG = {
 			0x41 ,0x59 ,0x41 ,0x58 ,0x5f ,0x5e ,0x5d ,0x5c ,0x5b,0x5a,0x59 ,0x58, 
-			0x48, 0x31,0xed, //xor rbp,rbp
+			//0x48, 0x31,0xed, //xor rbp,rbp
 			0xC3
 		};
 
@@ -554,6 +555,62 @@ void InstrumentManager::insertCodeHere(const cs_insn & callInsn, const std::stri
 	CodeCave * cave = BinaryEditor::instance()->addSection();
 	insertCodeAtHere_i(callInsn, asmInsn, cave, patchUnits);
 	addCodeCave(*cave);
+}
+
+void InstrumentManager::translate(uint64_t newaddress, const std::vector<const cs_insn *> & insns, std::vector<uint8_t> & code)
+{
+	uint64_t offset = 0;
+	//逐条指令翻译
+	for (auto insn : insns)
+	{
+		std::vector<uint8_t> per_code;
+		if (CSEngine::instance()->isInsnOphasRIP(*insn))
+		{
+			if (!calc_rip_addressing(*insn, newaddress + offset, per_code))
+			{
+				printf("0x%" PRIx64 ":\t%s\t%s\n", insn->address, insn->mnemonic, insn->op_str);
+				//CSEngine::instance()->disasmShow(insn);
+				std::cerr << "OP has EIP/RIP, break." << std::endl;
+				throw 1;
+			}
+		}
+		else
+		{
+			std::string insnsToMove = insn->mnemonic;
+			insnsToMove += " ";
+			insnsToMove += insn->op_str;
+			KSEngine::instance()->assemble(insnsToMove.c_str(), newaddress + offset, per_code);
+		}
+		offset += per_code.size();
+		code.insert(code.end(), per_code.begin(), per_code.end());
+	}
+}
+
+bool InstrumentManager::calc_rip_addressing(const cs_insn & insn, uint64_t newaddress, std::vector<uint8_t> & outcode)
+{
+	cs_x86 * x86 = &insn.detail->x86;
+	if (x86->op_count == 2)
+	{
+		cs_x86_op *op2 = &(x86->operands[1]);
+		if(op2->mem.base == X86_REG_RIP && op2->mem.disp != 0)
+		{
+			//复制原指令
+			outcode.insert(outcode.end(), insn.bytes, insn.bytes + insn.size);
+			uint64_t dst = insn.address + insn.size + op2->mem.disp;
+			uint32_t newdisp = dst - (newaddress + insn.size);
+			//修改新偏移
+			memcpy(outcode.data() + 3, &newdisp, 4);
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+	}
+	else
+	{
+		return false;
+	}
 }
 
 CodeCave * InstrumentManager::addCodeCave(const CodeCave & cave)

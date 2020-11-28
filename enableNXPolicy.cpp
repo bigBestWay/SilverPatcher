@@ -15,14 +15,6 @@ void enableNXPolicy::do_patch()
 		return;
 	}
 
-	Segment * segment = nullptr;
-	if (BinaryEditor::instance()->getSegment(SEGMENT_TYPES::PT_GNU_STACK, segment))
-	{
-		segment->remove(ELF_SEGMENT_FLAGS::PF_X);
-		std::cout << "Add NX support." << std::endl;
-	}
-	else
-	{
-		std::cerr << "Segment GNU_STACK not found." << std::endl;
-	}
+	BinaryEditor::instance()->enableNX();
+	std::cout << "Add NX support." << std::endl;
 }

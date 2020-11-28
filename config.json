@@ -1,7 +1,4 @@
 {
-    "pwn_property":{
-        "libc_version":"2.23"
-    },
     "policys":
         {
             "enableNXPolicy":{
@@ -17,7 +14,7 @@
             "RandomPLTGOTPolicy":{
                 "comment":"重新排列PLT/GOT表项。ELF文件大小不变，但变动较大。",
                 "level":"LOW",
-                "enable":1
+                "enable":0
             },
             "DisableFreePolicy":{
                 "comment":"比较UGLY，禁用free达到通防。",
@@ -34,49 +31,10 @@
                 "level":"VERYHIGH",
                 "enable":0
             },
-            "StartInjectPolicy":{
-                "comment":"该策略在start()开头插入代码执行想要的功能。",
+            "MainInjectPolicy":{
+                "comment":"main函数开头代码注入",
                 "level":"MEDIUM",
-                "enable":1,
-                "codeProvider":{
-                    "ModifyLibcCodeProvider":{
-                        "comment":"对libc中的数据进行修改。它与setRPathPolicy冲突。",
-                        "enable":1,
-                        "modifyGlobalMaxFast":{
-                            "comment":"修改global_max_fast，令malloc关闭或只使用fastbin。value取值范围[1,0x7fffffff]。为1，关闭；为超大值，就会只使用fastbin。",
-                            "enable":0,
-                            "value":"1"
-                        },
-                        "closeTcache":{
-                            "comment":"修改mp_.tcache_count，令malloc关闭tcache或改变tcache的最大数量（默认是7）。",
-                            "enable":0
-                        },
-                        "setNoBufStdout":{
-                            "comment":"设置STDOUT为不缓冲，这个是配合Capture01CodeProvider使用的。",
-                            "enable":0
-                        },
-                        "nopbinsh":{
-                            "comment":"nop掉libc中的binsh字符串，使system/oneshot失效",
-                            "enable":1
-                        }
-                    },
-                    "ClearBackdoorCodeProvider":{
-                        "comment":"当需要清理后门的时候打上一轮即可，下一轮去掉。",
-                        "enable":0
-                    },
-                    "BindShellCodeProvider":{
-                        "comment":"fork子进程，提供bindtcp_shell，密码固定是8字节。",
-                        "enable":0,
-                        "port":56789,
-                        "password":"abcdefgh"
-                    },
-                    "Capture01CodeProvider":{
-                        "comment":"fork子进程，抓取输入输出并保存到文件。",
-                        "enable":0,
-                        "forward_host":"117.78.9.13",
-                        "forward_port":56789
-                    }
-                }
+                "enable":0
             },
             "FmtVulScanRepairPolicy":{
                 "comment":"该策略扫描格式串漏洞，如果配置了patch，则会打补丁。比如有指令0x40086c call printf存在格式化串漏洞，那么就在patch加一个元素：function=printf, callAddress=0x40086c",
@@ -95,45 +53,66 @@
             }
         }
         ,
-    "libcdb":{
-        "comment":"libcdb内容需要根据比赛环境即时修改",
-        "2.23":{
-            "x64":{
-                "global_max_fast":"0x3c67f8",
-                "malloc":"0x84130",
-                "__libc_start_main":"0x20750",
-                "free":"0x844f0",
-                "_IO_2_1_stdout_":"0x3c5620",
-                "str_bin_sh":"0x18ce17"
+    "codeProvider":{
+        "ModifyLibcCodeProvider":{
+            "comment":"对libc中的数据进行修改。它与setRPathPolicy冲突。",
+            "enable":1,
+            "modifyGlobalMaxFast":{
+                "comment":"修改global_max_fast，令malloc关闭或只使用fastbin。value取值范围[1,0x7fffffff]。为1，关闭；为超大值，就会只使用fastbin。",
+                "enable":0,
+                "value":"1"
             },
-            "x32":{
-                "global_max_fast":"0x1b38e0",
-                "malloc":"0x1f5110",
-                "__libc_start_main":"0x18550",
-                "free":"0x1f5180",
-                "_IO_2_1_stdout_":"0x1b2d60",
-                "str_bin_sh":"0x15bb0b"
+            "closeTcache":{
+                "comment":"修改mp_.tcache_count，令malloc关闭tcache或改变tcache的最大数量（默认是7）。",
+                "enable":0
+            },
+            "setNoBufStdout":{
+                "comment":"设置STDOUT为不缓冲，这个是配合Capture01CodeProvider使用的。",
+                "enable":0
+            },
+            "nopbinsh":{
+                "comment":"nop掉libc中的binsh字符串，使system/oneshot失效",
+                "enable":1
             }
         },
-        "2.27": {
-            "x64":{
-                "global_max_fast":"0x3ed940",
-                "malloc":"0x40c4b0",
-                "__libc_start_main":"0x21ab0",
-                "free":"0x40c620",
-                "_IO_2_1_stdout_":"0x3ec760",
-                "tcache_count":"0x3eb2e0",
-                "str_bin_sh":""
-            },
-            "x32":{
-                "global_max_fast":"0x1d9904",
-                "malloc":"0x2067f0",
-                "__libc_start_main":"0x18d90",
-                "free":"0x206940",
-                "_IO_2_1_stdout_":"0x1d8d80",
-                "tcache_count":"0x1d8158",
-                "str_bin_sh":""
-            }
+        "ClearBackdoorCodeProvider":{
+            "comment":"当需要清理后门的时候打上一轮即可，下一轮去掉。",
+            "enable":0
+        },
+        "BindShellCodeProvider":{
+            "comment":"fork子进程，提供bindtcp_shell，密码固定是8字节。",
+            "enable":0,
+            "port":56789,
+            "password":"abcdefgh"
+        },
+        "Capture01CodeProvider":{
+            "comment":"fork子进程，抓取输入输出并保存到文件。",
+            "enable":0,
+            "forward_host":"117.78.9.13",
+            "forward_port":56789
+        }
+    },
+    "libcdb":{
+        "comment":"libcdb内容需要根据比赛环境即时修改",
+        "x64":{
+            "global_max_fast":"0x3ed940",
+            "malloc":"0x40c4b0",
+            "__libc_start_main":"0x20750",
+            "free":"0x40c620",
+            "_IO_2_1_stdout_":"0x3ec760",
+            "tcache_count":"0x3eb2e0",
+            "str_bin_sh":"0x18CE17",
+            "libccall_main_ret_offset":"0x20840"
+        },
+        "x32":{
+            "global_max_fast":"0x1d9904",
+            "malloc":"0x2067f0",
+            "__libc_start_main":"0x18d90",
+            "free":"0x206940",
+            "_IO_2_1_stdout_":"0x1d8d80",
+            "tcache_count":"0x1d8158",
+            "str_bin_sh":"",
+            "libccall_main_ret_offset":""
         }
     }
 }

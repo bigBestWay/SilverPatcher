@@ -74,6 +74,8 @@ private:
 	static void generateJmpCode(const cs_insn * insns, size_t count, uint64_t addressOffset, CodeCave * cave, std::vector<PatchUnit> & patchUnits);
 	void insertCodeAtBegin_i(const cs_insn * insns, size_t count, CodeCave * cave, std::vector<PatchUnit> & patchUnits);
 	void insertCodeAtHere_i(const cs_insn & callInsn, const std::string & asmInsn, CodeCave * cave, std::vector<PatchUnit> & patchUnits);
+	static void translate(uint64_t newaddress, const std::vector<const cs_insn *> & insns, std::vector<uint8_t> & code);
+	static bool calc_rip_addressing(const cs_insn & insn, uint64_t newaddress, std::vector<uint8_t> & outcode);
 private:
 	std::list<CodeCave> m_caves;
 	std::list<GeneralCodeProvider *> _codeProviders;

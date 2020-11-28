@@ -1,7 +1,11 @@
 #include "BinaryEditor.h"
 #include "CSEngine.h"
+#include "LibelfEditor.h"
+#include <unistd.h>
+#include <sys/stat.h>
 
 BinaryEditor * BinaryEditor::_instance = nullptr;
+BinaryEditor::PatchMode BinaryEditor::_mode = LIBELF_PATCH_MODE;
 
 bool BinaryEditor::init(const std::string & elfname)
 {
@@ -12,20 +16,16 @@ bool BinaryEditor::init(const std::string & elfname)
 		std::cerr << e.what() << std::endl;
 		return false;
 	}
-	loadCodeDefaultCaves();
-	return true;
-}
 
-bool BinaryEditor::getSegment(SEGMENT_TYPES type, Segment *& out)
-{
-	try
+	_outfile = elfname + "_patched";
+
+	if (_mode == LIBELF_PATCH_MODE)
 	{
-		out = &_binary->get(type);
+		LibelfEditor::copy_file(elfname, _outfile);
+		if(!LibelfEditor::init(_outfile.c_str()))
+			return false;
 	}
-	catch (...)
-	{
-		return false;
-	}
+	
 	return true;
 }
 
@@ -42,9 +42,61 @@ bool BinaryEditor::getSegment(uint64_t addr, Segment * &out)
 	return true;
 }
 
-void BinaryEditor::writeFile(const std::string & elfname)
+bool BinaryEditor::enableNX()
 {
-	_binary->write(elfname);
+	if (_mode == LIEF_PATCH_MODE)
+	{
+		try
+		{
+			Segment & segment = _binary->get(SEGMENT_TYPES::PT_GNU_STACK);
+			segment.remove(ELF_SEGMENT_FLAGS::PF_X);
+		}
+		catch (...)
+		{
+			return false;
+		}
+		return true;
+	}
+	else
+	{
+		return LibelfEditor::enable_nx();
+	}
+}
+
+bool BinaryEditor::enableBindnow()
+{
+	if (_mode == LIEF_PATCH_MODE)
+	{
+		try
+		{
+			DynamicEntry & dynEntry = _binary->get(DYNAMIC_TAGS::DT_DEBUG);
+			dynEntry.tag(DYNAMIC_TAGS::DT_BIND_NOW);
+			dynEntry.value(0);
+		}
+		catch (...)
+		{
+			return false;
+		}
+		return true;
+	}
+	else
+	{
+		return LibelfEditor::enable_bindnow();
+	}
+}
+
+void BinaryEditor::writeFile()
+{
+	if(_mode == LIBELF_PATCH_MODE)
+		LibelfEditor::writeFile();
+	else
+	{
+		unlink(_outfile.c_str());
+		_binary->write(_outfile);
+	}
+		
+	chmod(_outfile.c_str(), S_IRWXU|S_IXGRP|S_IRGRP|S_IXOTH|S_IROTH);
+	std::cout << "\033[1m\033[31m" << _outfile << " generated." << "\033[0m" << std::endl;
 }
 
 bool BinaryEditor::getSectionByType(ELF_SECTION_TYPES type, Section * & out)
@@ -116,35 +168,13 @@ void BinaryEditor::textFunctions(LIEF::Binary::functions_t & textFuncions)
 
 void BinaryEditor::patch_address(uint64_t address, const std::vector<uint8_t> & code)
 {
-	_binary->patch_address(address, code);
-}
-
-/*一个ELF文件加载到进程中的只看Segment，section是链接使用的。
-因此寻找code cave可以使用加载进内存中但又没什么用的Segement。
-比如PT_NOTE、PT_GNU_EH_FRAME，并修改标志位使该段可执行。
-函数间的空隙太小，多为10字节以下，暂不考虑使用。
-*/
-void BinaryEditor::loadCodeDefaultCaves()
-{
-	for (const Section & section : _binary->sections())
+	if (_mode == LIBELF_PATCH_MODE)
 	{
-		const std::string & name = section.name();
-		if (name == ".eh_frame" || name == ".eh_frame_hdr")
-		{
-			CodeCave cave;
-			cave.virtual_addr = section.virtual_address();
-			cave.size = section.size();
-			//section.add(ELF_SEGMENT_FLAGS::PF_X);
-			InstrumentManager::instance()->addCodeCave(cave);
-			std::cout << "LOAD cave " << name << " size: " << cave.size << std::endl;
-
-			Segment & segment = _binary->segment_from_virtual_address(cave.virtual_addr);
-			if (!segment.has(ELF_SEGMENT_FLAGS::PF_X))
-			{
-				segment.add(ELF_SEGMENT_FLAGS::PF_X);
-				std::cout << "Segment " << std::hex << segment.virtual_address() << " add X flag. " << std::endl;
-			}
-		}
+		LibelfEditor::patch_address(address, code);
+	}
+	else
+	{
+		_binary->patch_address(address, code);
 	}
 }
 
@@ -166,6 +196,12 @@ uint64_t BinaryEditor::getQWORD(uint64_t address)
 
 CodeCave * BinaryEditor::addSection(size_t size)
 {
+	if (_mode == LIBELF_PATCH_MODE)
+	{
+		LibelfEditor::abort();
+		throw new NotSupportException();
+	}
+	
 	std::cout<< "\033[31m" << "Add section size " << size << "\033[0m" <<std::endl;
 	//没有足够大小的cave了，只能添加段
 	Section new_section{ ".gnu.text" };
@@ -272,92 +308,9 @@ bool BinaryEditor::getGOTSection(Section & section)
 	return false;
 }
 
-bool BinaryEditor::getTextSection(Section & section)
+std::vector<uint8_t> BinaryEditor::get_content(uint64_t address, uint64_t size)
 {
-	for (const Section & sec : _binary->sections())
-	{
-		if (sec.type() == ELF_SECTION_TYPES::SHT_PROGBITS && sec.name() == ".text")
-		{
-			section = sec;
-			return true;
-		}
-	}
-
-	return false;
-}
-
-bool BinaryEditor::getReladynSection(Section & section)
-{
-	for (const Section & sec : _binary->sections())
-	{
-		if (sec.type() == ELF_SECTION_TYPES::SHT_RELA && sec.name() == ".rela.dyn")
-		{
-			section = sec;
-			return true;
-		}
-	}
-
-	return false;
-}
-
-bool BinaryEditor::getReldynSection(Section & section)
-{
-	for (const Section & sec : _binary->sections())
-	{
-		if (sec.type() == ELF_SECTION_TYPES::SHT_REL && sec.name() == ".rel.dyn")
-		{
-			section = sec;
-			return true;
-		}
-	}
-
-	return false;
-}
-
-bool BinaryEditor::getDynstrSection(Section & section)
-{
-	for (const Section & sec : _binary->sections())
-	{
-		if (sec.type() == ELF_SECTION_TYPES::SHT_STRTAB && sec.name() == ".dynstr")
-		{
-			section = sec;
-			return true;
-		}
-	}
-
-	return false;
-}
-
-bool BinaryEditor::getDynsymSection(Section & section)
-{
-	for (const Section & sec : _binary->sections())
-	{
-		if (sec.type() == ELF_SECTION_TYPES::SHT_DYNSYM && sec.name() == ".dynsym")
-		{
-			section = sec;
-			return true;
-		}
-	}
-
-	return false;
-}
-
-void BinaryEditor::getPLTGOTRelocations(std::vector<Relocation *> & pltgotRel)
-{
-	std::list<uint64_t> plotTabEntryAddress;
-	for (auto reloc : _binary->pltgot_relocations())
-	{
-		plotTabEntryAddress.push_back(reloc.address());
-	}
-
-	for (uint64_t addr : plotTabEntryAddress)
-	{
-		Relocation * reloc = _binary->get_relocation(addr);
-		if (reloc)
-		{
-			pltgotRel.push_back(reloc);
-		}
-	}
+	return _binary->get_content_from_virtual_address(address, size);
 }
 
 void BinaryEditor::getAllRelocations(std::vector<Relocation *> & allrels)
