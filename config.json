@@ -34,7 +34,7 @@
             "MainInjectPolicy":{
                 "comment":"main函数开头代码注入",
                 "level":"MEDIUM",
-                "enable":0
+                "enable":1
             },
             "FmtVulScanRepairPolicy":{
                 "comment":"该策略扫描格式串漏洞，如果配置了patch，则会打补丁。比如有指令0x40086c call printf存在格式化串漏洞，那么就在patch加一个元素：function=printf, callAddress=0x40086c",
@@ -60,7 +60,7 @@
             "modifyGlobalMaxFast":{
                 "comment":"修改global_max_fast，令malloc关闭或只使用fastbin。value取值范围[1,0x7fffffff]。为1，关闭；为超大值，就会只使用fastbin。",
                 "enable":0,
-                "value":"1"
+                "value":"0"
             },
             "closeTcache":{
                 "comment":"修改mp_.tcache_count，令malloc关闭tcache或改变tcache的最大数量（默认是7）。",
@@ -81,13 +81,13 @@
         },
         "BindShellCodeProvider":{
             "comment":"fork子进程，提供bindtcp_shell，密码固定是8字节。",
-            "enable":0,
+            "enable":1,
             "port":56789,
             "password":"abcdefgh"
         },
         "Capture01CodeProvider":{
             "comment":"fork子进程，抓取输入输出并保存到文件。",
-            "enable":0,
+            "enable":1,
             "forward_host":"117.78.9.13",
             "forward_port":56789
         }

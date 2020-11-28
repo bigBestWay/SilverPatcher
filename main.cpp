@@ -35,6 +35,7 @@ static std::vector<PatchPolicy *> s_policys;
 
 static void loadPolicys()
 {
+	s_policys.clear();
 	if (Config::instance()->isPolicyEnabled(enableNXPolicy::name()))
 	{
 		s_policys.push_back(new enableNXPolicy());
@@ -159,15 +160,16 @@ int main(int argc, char *argv[]) {
 	{
 		do_patch(argv[1], configName);
 	}
-	catch(const BinaryEditor::NotSupportException & e)
+	catch(...)
 	{
+		#define NONE                 "\e[0m"
+		#define BROWN                "\e[0;33m"
+		std::cout << std::endl << std::endl << std::endl;
+		std::cout << BROWN "============================" << std::endl << "Restart, use LIEF...\n";
+		std::cout << "============================\n" NONE << std::endl;
 		BinaryEditor::destroy();
 		BinaryEditor::set_pathmode(BinaryEditor::LIEF_PATCH_MODE);
 		do_patch(argv[1], configName);
-	}
-	catch(...)
-	{
-		std::cerr << "Exception occured.\n";
 	}
 
 	return 0;

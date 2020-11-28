@@ -145,7 +145,18 @@ void CSEngine::disasmShow(const std::vector<uint8_t> & code, uint64_t address, b
 
 void CSEngine::disasmShow(const cs_insn & insn, bool showdetail /*= true*/)
 {
-	printf("0x%" PRIx64 ":\t%s\t%s\n", insn.address, insn.mnemonic, insn.op_str);
+	printf("0x%" PRIx64 ": ", insn.address);
+	if (!showdetail)
+	{
+		hexDump(insn.bytes, insn.size);
+		int size = insn.size;
+		for (int i = size; i < 8; i++)
+		{
+			printf("   ");
+		}
+	}
+	
+	printf("\t%s\t%s\n", insn.mnemonic, insn.op_str);
 	if (showdetail)
 	{
 		cs_x86 * x86 = &(insn.detail->x86);
@@ -198,6 +209,6 @@ void CSEngine::hexDump(const void * ptr, int size)
 	{
 		printf("%02x ", ((uint8_t *)ptr)[i]);
 	}
-	printf("\n");
+	//printf("\n");
 }
 
