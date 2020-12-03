@@ -32,7 +32,7 @@ CodeCave InstrumentManager::getCodeCave(unsigned int size)
 
 	return cave;
 }
-//addressOffset，当PIE开启时，需要先添加段，添加段后地址就变了，而dyninst对此不感知
+
 void InstrumentManager::rise_stack_patch(const cs_insn * insns, size_t count, const BinaryAnalyzer & analyzer, CodeCave * cave, std::vector<PatchUnit> & patchUnits)
 {
 	//printf("Cave: addr = 0x%x, size = %lu\n", cave->virtual_addr, cave->size);
