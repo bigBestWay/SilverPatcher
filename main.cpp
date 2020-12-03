@@ -24,7 +24,6 @@
 #include <sys/stat.h>
 #include "BinaryAnalyzer.h"
 #include "BindNowPolicy.h"
-#include "StartInjectPolicy.h"
 #include "Config.h"
 #include "DisableFreePolicy.h"
 #include "FmtVulScanRepairPolicy.h"
@@ -47,10 +46,6 @@ static void loadPolicys()
 	if (Config::instance()->isPolicyEnabled(RandomPLTGOTPolicy::name()))
 	{
 		s_policys.push_back(new RandomPLTGOTPolicy());
-	}
-	if (Config::instance()->isPolicyEnabled(StartInjectPolicy::name()))
-	{
-		s_policys.push_back(new StartInjectPolicy());
 	}
 	if (Config::instance()->isPolicyEnabled(MainInjectPolicy::name()))
 	{
