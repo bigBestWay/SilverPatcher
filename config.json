@@ -17,14 +17,17 @@
                 "enable":0
             },
             "DisableFreePolicy":{
-                "comment":"比较UGLY，禁用free达到通防。",
+                "comment":"禁用free达到通防。",
                 "level":"SECURE",
                 "enable":0
             },
             "RiseStackPolicy":{
-                "comment":"在函数的开头抬高栈，抵抗栈溢出攻击，需要新加代码段。因有些函数代码限制，可能无法自动插入代码。",
+                "comment":"在函数的开头抬高栈，抵抗栈溢出攻击，可能要新加代码段。因有些函数代码限制，可能无法自动插入代码。如function列表中可填写函数地址，修改指定地址函数；如果不填写，会尝试修改所有函数。",
                 "level":"HIGH",
-                "enable":0
+                "enable":1,
+                "functions":[
+                    "0x4008B0"
+                ]
             },
             "setRPathPolicy":{
                 "comment":"修改ELF链接到指定目录下的libc.so.6（可以放置eglibc），需要添加段，这个策略过于UGLY。如果checker检查通过，理论上开启它就可以通防。它与ModifyLibcCodeProvider冲突。",
@@ -32,9 +35,9 @@
                 "enable":0
             },
             "MainInjectPolicy":{
-                "comment":"main函数开头代码注入",
+                "comment":"main函数开头代码注入，代码来自下文的CodeProvider",
                 "level":"MEDIUM",
-                "enable":1
+                "enable":0
             },
             "FmtVulScanRepairPolicy":{
                 "comment":"该策略扫描格式串漏洞，如果配置了patch，则会打补丁。比如有指令0x40086c call printf存在格式化串漏洞，那么就在patch加一个元素：function=printf, callAddress=0x40086c",
@@ -56,7 +59,7 @@
     "codeProvider":{
         "ModifyLibcCodeProvider":{
             "comment":"对libc中的数据进行修改。它与setRPathPolicy冲突。",
-            "enable":1,
+            "enable":0,
             "modifyGlobalMaxFast":{
                 "comment":"修改global_max_fast，令malloc关闭或只使用fastbin。value取值范围[1,0x7fffffff]。为1，关闭；为超大值，就会只使用fastbin。",
                 "enable":0,
@@ -72,7 +75,7 @@
             },
             "nopbinsh":{
                 "comment":"nop掉libc中的binsh字符串，使system/oneshot失效",
-                "enable":1
+                "enable":0
             }
         },
         "ClearBackdoorCodeProvider":{
@@ -81,13 +84,13 @@
         },
         "BindShellCodeProvider":{
             "comment":"fork子进程，提供bindtcp_shell，密码固定是8字节。",
-            "enable":1,
+            "enable":0,
             "port":56789,
             "password":"abcdefgh"
         },
         "Capture01CodeProvider":{
             "comment":"fork子进程，抓取输入输出并保存到文件。",
-            "enable":1,
+            "enable":0,
             "forward_host":"117.78.9.13",
             "forward_port":56789
         }

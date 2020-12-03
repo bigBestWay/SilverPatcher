@@ -116,11 +116,7 @@ static void do_patch(const char * elfname, const std::string & configName)
 	Config::instance()->init(configName);
 
 	loadPolicys();
-	if (!BinaryAnalyzer::instance()->init(elfname))
-	{
-		std::cerr << "BinaryAnalyzer parse failed" << std::endl;
-		return;
-	}
+
 	execPolicys();
 
 	BinaryEditor::instance()->writeFile();

@@ -16,6 +16,5 @@ public:
 	RiseStackPolicy();
 	~RiseStackPolicy();
 private:
-	void patchFuncBegin(cs_insn * insn, size_t count);
 	bool isGccFunction(const std::string & funcName);
 };

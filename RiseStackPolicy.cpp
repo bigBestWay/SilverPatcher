@@ -2,6 +2,8 @@
 #include "BinaryEditor.h"
 #include "CSEngine.h"
 #include "KSEngine.h"
+#include "BinaryAnalyzer.h"
+#include "Config.h"
 
 /*该策略还是存在一些不稳定因素，可能会导致程序运行不了*/
 void RiseStackPolicy::do_patch()
@@ -10,6 +12,10 @@ void RiseStackPolicy::do_patch()
 
 	Binary::functions_t textFunctions;
 	BinaryEditor::instance()->textFunctions(textFunctions);
+
+	std::set<uint64_t> config_funcs;
+	Config::instance()->getRiseStackFunc(config_funcs);
+
 	for (size_t i = 0; i < textFunctions.size(); ++i)
 	{
 		const LIEF::Function & func = textFunctions[i];
@@ -19,7 +25,15 @@ void RiseStackPolicy::do_patch()
 			continue;
 		}
 
-		std::cout << "**$$[" << func << "]$$**" << std::endl;
+		//未配置
+		if (!config_funcs.empty() && config_funcs.find(func.address()) == config_funcs.end())
+		{
+			continue;
+		}
+
+		#define NONE                 "\e[0m"
+		#define BROWN                "\e[0;33m"
+		std::cout << BROWN "**$$[" << func << "]$$**" NONE << std::endl;
 
 		uint64_t size = func.size();
 		if (size == 0)
@@ -35,6 +49,9 @@ void RiseStackPolicy::do_patch()
 			}
 		}
 		const std::vector<uint8_t> & code = BinaryEditor::instance()->get_content(func.address(), size);
+
+		BinaryAnalyzer analyzer(func.address(), code);
+
 		cs_insn * insn = nullptr;
 		size_t count = CSEngine::instance()->disasm(code, func.address(), &insn);
 		if (count <= 1)
@@ -45,7 +62,19 @@ void RiseStackPolicy::do_patch()
 
 		try
 		{
-			patchFuncBegin(insn, count);
+			if (count > 0)
+			{
+				std::vector<PatchUnit> patchUnits;
+				InstrumentManager::instance()->rise_stack_patch(insn, count, analyzer, patchUnits);
+				for (const PatchUnit & unit : patchUnits)
+				{
+#if 1
+					std::cout << "Patch code:" << std::endl;
+					CSEngine::instance()->disasmShow(unit.code, unit.address);
+#endif
+					BinaryEditor::instance()->patch_address(unit.address, unit.code);
+				}
+			}
 		}
 		catch (int & e)
 		{
@@ -67,29 +96,6 @@ RiseStackPolicy::RiseStackPolicy()
 RiseStackPolicy::~RiseStackPolicy()
 {
 
-}
-
-void RiseStackPolicy::patchFuncBegin(cs_insn * insns, size_t count)
-{
-	if (count > 0)
-	{
-		std::vector<PatchUnit> patchUnits;
-		uint64_t addressOffset_forDyninst = 0;
-		if (BinaryEditor::instance()->isPIE())//对PIE场景的特殊处理
-		{
-			addressOffset_forDyninst = DEFAULT_SECTION_SIZE;
-		}
-
-		InstrumentManager::instance()->generateJmpCode(insns, count, addressOffset_forDyninst, patchUnits);
-		for (const PatchUnit & unit : patchUnits)
-		{
-		#if 1
-			std::cout << "Patch code:" << std::endl;
-			CSEngine::instance()->disasmShow(unit.code, unit.address);
-		#endif
-			BinaryEditor::instance()->patch_address(unit.address, unit.code);
-		}
-	}
 }
 
 bool RiseStackPolicy::isGccFunction(const std::string & funcName)

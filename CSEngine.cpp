@@ -194,6 +194,26 @@ void CSEngine::disasmShow(const cs_insn & insn, bool showdetail /*= true*/)
 	}
 }
 
+bool CSEngine::is_jmp_grp_type(const cs_insn & insn)
+{
+	for (uint8_t i = 0; i < insn.detail->groups_count; ++i)
+	{
+		if (insn.detail->groups[i] == CS_GRP_JUMP)
+			return true;
+	}
+	return false;
+}
+
+bool CSEngine::is_ret_grp_type(const cs_insn & insn)
+{
+	for (uint8_t i = 0; i < insn.detail->groups_count; ++i)
+	{
+		if (insn.detail->groups[i] == CS_GRP_RET)
+			return true;
+	}
+	return false;
+}
+
 void CSEngine::hexDump(const std::vector<uint8_t> & code)
 {
 	for (size_t i = 0; i < code.size(); ++i)

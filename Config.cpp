@@ -174,6 +174,22 @@ std::string Config::getCaptureForwardPort()const
 	return buf;
 }
 
+void Config::getRiseStackFunc(std::set<uint64_t> & funcs) const
+{
+	CJsonObject & obj = _json->get()["policys"]["RiseStackPolicy"]["functions"];
+	int size = obj.GetArraySize();
+	std::cout << "size :" << size << std::endl;
+	for (int i = 0; i < size; ++i)
+	{
+		std::string function;
+		if (obj.Get(i, function))
+		{
+			std::cout << "Func :" << function << std::endl;
+			funcs.insert(std::strtoul(function.c_str(), nullptr, 16));
+		}
+	}
+}
+
 std::string Config::getCaptureForwardHost()const
 {
 	std::string val;

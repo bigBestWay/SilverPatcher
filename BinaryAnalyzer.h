@@ -1,51 +1,37 @@
 #pragma once
+#include <list>
 #include <vector>
 #include <map>
 #include <cstddef>
 #include <cstdint>
 
-enum FIND_BLOCK_RESULT
-{
-	SUCCESS,
-	FUNCTION_NOT_ANALYSE,
-	NO_RET_BLOCK
-};
-
-class BPatch_function;
 class cs_insn;
 class BinaryAnalyzer
 {
 public:
-	static BinaryAnalyzer * instance()
+	struct BasicBlock
 	{
-		if (_instance == nullptr)
-		{
-			_instance = new BinaryAnalyzer;
-		}
-		return _instance;
-	}
+		uint64_t start;
+		std::vector<const cs_insn *> insns;
+		std::vector<BasicBlock *> upflow;
+		std::vector<BasicBlock *> downflow;
+	};
 
-	static void destroy()
-	{
-		delete _instance;
-		_instance = nullptr;
-	}
+	BinaryAnalyzer(uint64_t address, const std::vector<uint8_t> & code);
+	~BinaryAnalyzer();
 
-	bool init(const char * elfname);
+	const BasicBlock * getSrcBlock(uint64_t block_address);
 
-	FIND_BLOCK_RESULT getReturnBlock(uint64_t func_address, uint64_t addressOffset_forDyninst, cs_insn *&insns, size_t & count);
+	static uint64_t getMainFunction();
 
-	bool getSrcBlock(uint64_t block_address, uint64_t addressOffset_forDyninst, cs_insn *&insns, size_t & count);
-
-	uint64_t getMainFunction();
+	bool getReturnBlock(std::list<const cs_insn *> & insns)const;
 
 private:
-	static BinaryAnalyzer * _instance;
-	BinaryAnalyzer() { _functions = nullptr; }
-	~BinaryAnalyzer() {}
-	BPatch_function * findFunction_i(uint64_t address)const;
+	BasicBlock * get_block(uint64_t address, bool new_not_found = true);
 private:
-	std::vector<BPatch_function *> * _functions;
-	std::map<uint64_t, void *>  _blocks;
+	std::map<uint64_t, BasicBlock *> _blocksRel;
+	cs_insn * _insns;
+	size_t _insn_count;
+	uint64_t _functionAddr;
 };
 

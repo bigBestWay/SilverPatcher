@@ -33,7 +33,7 @@ CodeCave InstrumentManager::getCodeCave(unsigned int size)
 	return cave;
 }
 //addressOffset，当PIE开启时，需要先添加段，添加段后地址就变了，而dyninst对此不感知
-void InstrumentManager::generateJmpCode(const cs_insn * insns, size_t count, uint64_t addressOffset_forDyninst, CodeCave * cave, std::vector<PatchUnit> & patchUnits)
+void InstrumentManager::rise_stack_patch(const cs_insn * insns, size_t count, const BinaryAnalyzer & analyzer, CodeCave * cave, std::vector<PatchUnit> & patchUnits)
 {
 	//printf("Cave: addr = 0x%x, size = %lu\n", cave->virtual_addr, cave->size);
 	std::vector<uint8_t> jmpToUpCode;
@@ -145,58 +145,38 @@ void InstrumentManager::generateJmpCode(const cs_insn * insns, size_t count, uin
 	/*======================上半段完成=========================*/
 
 	//PATCH代码已放好，现在就差在原函数RET所在BLOCK中插入跳转代码，在函数结尾恢复栈
-	cs_insn * retBlockInsns = nullptr;
-	size_t retBlockInsnsCount = 0;
-	FIND_BLOCK_RESULT result = BinaryAnalyzer::instance()->getReturnBlock(insns[0].address, addressOffset_forDyninst, retBlockInsns, retBlockInsnsCount);
-	if (result == NO_RET_BLOCK)
+	std::list<const cs_insn *> retBlockInsns;
+	if (!analyzer.getReturnBlock(retBlockInsns) || retBlockInsns.empty())
 	{
 		//没找到RET BLOCK
 		std::cerr << "Function " << std::hex << insns[0].address << " not found RET block." << std::endl;
 		throw 1;
 	}
-	else if(result == FUNCTION_NOT_ANALYSE)
-	{
-		std::cerr << "Function " << std::hex << insns[0].address << " dyninst not analyze." << std::endl;
-		throw 1;
-	}
 
-searchRetBlock:
 	//从后到前为JUMP语句寻找空间
 	size_t occupySize = 0;
 	uint64_t jmpToLowCodeAddr = 0;
 	std::vector<uint8_t> jmpToLowCode;
-	std::string insnsToMove;
-	insnIndex = retBlockInsnsCount - 1;
-	while ((int)insnIndex >= 0)
+
+	code2translate.clear();
+	insnsToMoveCodeNew.clear();
+	std::cout << "RET-Block code:\n";
+	for (auto ite = retBlockInsns.rbegin(); ite != retBlockInsns.rend(); ++ite)
 	{
 		const uint64_t lowStackAddr = cave->virtual_addr + newInsnBytes;
-		const cs_insn & insn = retBlockInsns[insnIndex];
-		CSEngine::instance()->disasmShow(insn, false);
-		if (CSEngine::instance()->isInsnOphasRIP(insn))
-		{
-			printf("0x%" PRIx64 ":\t%s\t%s\n", insn.address, insn.mnemonic, insn.op_str);
-			std::cerr << "OP has EIP/RIP, break." << std::endl;
-			throw 1;
-		}
-		occupySize += insn.size;
-		std::string tmpStr;
-		if (insn.id != X86_INS_NOP)//NOP直接占用就好了，不需要迁移
-		{
-			tmpStr = insn.mnemonic;
-			tmpStr += " ";
-			tmpStr += insn.op_str;
-			tmpStr += std::string(";");
-			insnsToMove = tmpStr + insnsToMove;
-		}
+		const cs_insn * insn = *ite;
+		CSEngine::instance()->disasmShow(*insn, false);
 
-		if (insnIndex == retBlockInsnsCount - 1)//在RET前面把降栈指令添加进去
+		occupySize += insn->size;
+		if (insn->id != X86_INS_NOP //NOP直接占用就好了，不需要迁移
+			&& insn->id != X86_INS_RET && insn->id != X86_INS_RETF && insn->id != X86_INS_RETFQ //RET放置在最后
+			)
 		{
-			std::string lowStack = "add " + CSEngine::instance()->espName() + "," + std::to_string(height) + ";";
-			insnsToMove = lowStack + insnsToMove;
+			code2translate.push_back(insn);
 		}
 
 		std::string jmpLowStack = "jmp " + std::to_string(lowStackAddr);
-		KSEngine::instance()->assemble(jmpLowStack.c_str(), insn.address, jmpToLowCode);
+		KSEngine::instance()->assemble(jmpLowStack.c_str(), insn->address, jmpToLowCode);
 		if (jmpToLowCode.empty())
 		{
 			throw 1;
@@ -204,21 +184,20 @@ searchRetBlock:
 
 		if (occupySize >= jmpToLowCode.size())
 		{
-			jmpToLowCodeAddr = insn.address;
+			jmpToLowCodeAddr = insn->address;
 			//std::cout << "*** GOT end-jump address " << std::hex << insn.address << std::endl;
 			break;
 		}
-		--insnIndex;
 	}
 
 	//RET BLOCK空间不足，无法插桩
 	if (jmpToLowCodeAddr == 0)
 	{
 		std::cout << "RET block not have enough space to patch." << std::endl;
-		if (BinaryAnalyzer::instance()->getSrcBlock(retBlockInsns[0].address, addressOffset_forDyninst, retBlockInsns, retBlockInsnsCount))
-		{
-			goto searchRetBlock;
-		}
+		//if (BinaryAnalyzer::instance()->getSrcBlock(retBlockInsns[0].address, addressOffset_forDyninst, retBlockInsns, retBlockInsnsCount))
+		//{
+		//	goto searchRetBlock;
+		//}
 		throw 1;
 	}
 
@@ -229,13 +208,26 @@ searchRetBlock:
 		throw 1;
 	}
 
-	//迁移被占用的指令，其中包括了降栈指令
-	KSEngine::instance()->assemble(insnsToMove.c_str(), cave->virtual_addr + newInsnBytes, insnsToMoveCodeNew);
+	std::reverse(code2translate.begin(), code2translate.end());
+	//迁移被占用的指令，不包括降栈指令
+	translate(cave->virtual_addr + newInsnBytes, code2translate, insnsToMoveCodeNew);
 	if (insnsToMoveCodeNew.empty())
 	{
 		throw 1;
 	}
 	dstCode.insert(dstCode.end(), insnsToMoveCodeNew.begin(), insnsToMoveCodeNew.end());
+	newInsnBytes += insnsToMoveCodeNew.size();
+
+	//降栈
+	std::string lowStack = "add " + CSEngine::instance()->espName() + "," + std::to_string(height) + ";";
+	lowStack += (*retBlockInsns.rbegin())->mnemonic;
+	std::vector<uint8_t> lowstack_code;
+	KSEngine::instance()->assemble(lowStack.c_str(), cave->virtual_addr + newInsnBytes, lowstack_code);
+	if (lowstack_code.empty())
+	{
+		throw 1;
+	}
+	dstCode.insert(dstCode.end(), lowstack_code.begin(), lowstack_code.end());
 
 	if (dstCode.size() > cave->size)
 	{
@@ -256,11 +248,11 @@ searchRetBlock:
 	patchUnits.push_back(PatchUnit(jmpToLowCodeAddr, jmpToLowCode));
 }
 
-void InstrumentManager::generateJmpCode(const cs_insn * insns, size_t count, uint64_t addressOffset, std::vector<PatchUnit> & patchUnits)
+void InstrumentManager::rise_stack_patch(const cs_insn * insns, size_t count, const BinaryAnalyzer & analyzer, std::vector<PatchUnit> & patchUnits)
 {
 	for (std::list<CodeCave>::iterator ite = m_caves.begin(); ite != m_caves.end(); ++ite)
 	{
-		generateJmpCode(insns, count, addressOffset, &*ite, patchUnits);
+		rise_stack_patch(insns, count, analyzer, &*ite, patchUnits);
 		if (!patchUnits.empty())
 		{
 			return;
@@ -269,7 +261,7 @@ void InstrumentManager::generateJmpCode(const cs_insn * insns, size_t count, uin
 	//std::cout << "getJmpCodeCave not enough cave." << std::endl;
 	//现有cave不能满足要求，添加新段
 	CodeCave * cave = BinaryEditor::instance()->addSection();
-	generateJmpCode(insns, count, addressOffset, cave, patchUnits);
+	rise_stack_patch(insns, count, analyzer, cave, patchUnits);
 	InstrumentManager::instance()->addCodeCave(*cave);
 }
 

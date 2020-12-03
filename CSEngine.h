@@ -46,6 +46,10 @@ public:
 
 	void disasmShow(const cs_insn & insn, bool showdetail = true);
 
+	static bool is_jmp_grp_type(const cs_insn & insn);
+
+	static bool is_ret_grp_type(const cs_insn & insn);
+
 	static void hexDump(const std::vector<uint8_t> & code);
 
 	static void hexDump(const void * ptr, int size);

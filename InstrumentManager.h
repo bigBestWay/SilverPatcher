@@ -34,6 +34,7 @@ struct PatchUnit
 	}
 };
 
+class BinaryAnalyzer;
 class InstrumentManager
 {
 private:
@@ -58,7 +59,7 @@ public:
 	CodeCave getCodeCave(unsigned int size);
 
 	//在函数开头和结尾分别插入抬高和降低栈的代码
-	void generateJmpCode(const cs_insn * insns, size_t count, uint64_t addressOffset, std::vector<PatchUnit> & patchUnits);
+	void rise_stack_patch(const cs_insn * insns, size_t count, const BinaryAnalyzer & analyzer, std::vector<PatchUnit> & patchUnits);
 
 	void addCodeProvider(GeneralCodeProvider * provider)
 	{
@@ -71,7 +72,7 @@ public:
 
 	CodeCave * addCodeCave(const CodeCave & cave);
 private:
-	static void generateJmpCode(const cs_insn * insns, size_t count, uint64_t addressOffset, CodeCave * cave, std::vector<PatchUnit> & patchUnits);
+	static void rise_stack_patch(const cs_insn * insns, size_t count, const BinaryAnalyzer & analyzer, CodeCave * cave, std::vector<PatchUnit> & patchUnits);
 	void insertCodeAtBegin_i(const cs_insn * insns, size_t count, CodeCave * cave, std::vector<PatchUnit> & patchUnits);
 	void insertCodeAtHere_i(const cs_insn & callInsn, const std::string & asmInsn, CodeCave * cave, std::vector<PatchUnit> & patchUnits);
 	static void translate(uint64_t newaddress, const std::vector<const cs_insn *> & insns, std::vector<uint8_t> & code);

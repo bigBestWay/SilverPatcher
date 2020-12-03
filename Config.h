@@ -2,6 +2,7 @@
 #include <string>
 #include <cstdint>
 #include <map>
+#include <set>
 
 #define GLOBAL_MAX_FAST "global_max_fast"
 #define LIBC_START_MAIN "__libc_start_main"
@@ -29,6 +30,7 @@ public:
 	std::string getBindShellPasswd()const;
 	std::string getCaptureForwardHost()const;
 	std::string getCaptureForwardPort()const;
+	void getRiseStackFunc(std::set<uint64_t> & funcs) const;
 private:
 	Config();
 	~Config();
