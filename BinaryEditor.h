@@ -67,6 +67,8 @@ public:
 		return _binary->type();
 	}
 
+	void symbol_swap(Symbol & sym1, Symbol & sym2);
+
 	uint64_t getRandomAligned(uint64_t low, uint64_t high);
 
 	void textFunctions(LIEF::Binary::functions_t & textFuncions);

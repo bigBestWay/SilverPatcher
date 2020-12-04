@@ -135,6 +135,15 @@ LIEF::ELF::Relocation * BinaryEditor::getRelocation(uint64_t address)
 	return _binary->get_relocation(address);
 }
 
+void BinaryEditor::symbol_swap(Symbol & sym1, Symbol & sym2)
+{
+	sym1.swap(sym2);
+	if (_mode == LIBELF_PATCH_MODE)
+	{
+		LibelfEditor::symbol_swap(sym1.name(), sym2.name());
+	}
+}
+
 uint64_t BinaryEditor::getRandomAligned(uint64_t low, uint64_t high)
 {
 	srand(time(0));

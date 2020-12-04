@@ -20,7 +20,7 @@ struct RelocData
 
 	void swap(RelocData & o)
 	{
-		entry->symbol().swap(o.entry->symbol());
+		BinaryEditor::instance()->symbol_swap(entry->symbol(), o.entry->symbol());
 	}
 
 	friend std::ostream & operator <<(std::ostream & out, const RelocData &m)

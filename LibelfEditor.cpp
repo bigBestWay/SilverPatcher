@@ -137,6 +137,44 @@ bool LibelfEditor::enable_bindnow()
 	return false;
 }
 
+void LibelfEditor::symbol_swap(const std::string & name1, const std::string & name2)
+{
+	GElf_Sym sym1,sym2;
+	int sym_ndx1 = -1, sym_ndx2 = -1;
+	for (auto & section : _sections)
+	{
+		int section_ndx = section.first;
+		if (section.second.sh_type == SHT_DYNSYM)
+		{	
+			Elf_Scn * scn = elf_getscn(_binary, section_ndx);
+			Elf_Data * data = elf_getdata(scn, nullptr);
+
+			int ndx_sym = 0;
+			GElf_Sym sym;
+			while (gelf_getsym(data, ndx_sym, &sym) == &sym) {
+				const std::string & sym_name = elf_strptr(_binary, section.second.sh_link, sym.st_name);
+				if (sym_name == name1)
+				{
+					sym_ndx1 = ndx_sym;
+					std::memcpy(&sym1, &sym, sizeof(sym));
+				}
+				else if (sym_name == name2)
+				{
+					sym_ndx2 = ndx_sym;
+					std::memcpy(&sym2, &sym, sizeof(sym));
+				}
+				++ndx_sym;
+			}
+
+			gelf_update_sym(data, sym_ndx1, &sym2);
+			gelf_update_sym(data, sym_ndx2, &sym1);
+
+			elf_flagdata(data, ELF_C_SET, ELF_F_DIRTY);
+			elf_flagscn(scn, ELF_C_SET, ELF_F_DIRTY);
+		}
+	}
+}
+
 bool LibelfEditor::init(const char * elfname)
 {
     if (elf_version(EV_CURRENT) == EV_NONE)
@@ -208,6 +246,7 @@ bool LibelfEditor::init(const char * elfname)
 	}
 
 	loadCodeDefaultCaves();
+
 	return true;
 }
 
@@ -259,6 +298,7 @@ void LibelfEditor::patch_address(uint64_t address, const std::vector<uint8_t> & 
 		Elf_Scn * scn = elf_getscn(_binary, id);
 		Elf_Data * data = elf_getdata(scn, nullptr);
 		std::memcpy(data->d_buf + offset, code.data(), code.size());
+		elf_flagdata(data, ELF_C_SET, ELF_F_DIRTY);
 		elf_flagscn(scn, ELF_C_SET, ELF_F_DIRTY);
 	}
 }

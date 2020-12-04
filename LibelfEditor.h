@@ -13,6 +13,7 @@ public:
     static bool copy_file(const std::string & infile, const std::string & outfile);
 	static bool enable_nx();
 	static bool enable_bindnow();
+	static void symbol_swap(const std::string & name1, const std::string & name2);
 private:
     static void loadCodeDefaultCaves();
 };
