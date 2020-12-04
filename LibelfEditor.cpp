@@ -47,6 +47,21 @@ static int segment_from_virtual_address(uint64_t address, GElf_Phdr & phdr)
 	return -1;
 }
 
+static int find_section(uint32_t type, GElf_Shdr * & shdr)
+{
+	for (auto & section : _sections)
+	{
+		int section_ndx = section.first;
+		if (section.second.sh_type == type)
+		{
+			shdr = &section.second;
+			return section.first;
+		}
+	}
+
+	return -1;
+}
+
 bool LibelfEditor::copy_file(const std::string & infile, const std::string & outfile)
 {
 	FILE * in = fopen(infile.c_str(), "r");
@@ -141,38 +156,47 @@ void LibelfEditor::symbol_swap(const std::string & name1, const std::string & na
 {
 	GElf_Sym sym1,sym2;
 	int sym_ndx1 = -1, sym_ndx2 = -1;
-	for (auto & section : _sections)
-	{
-		int section_ndx = section.first;
-		if (section.second.sh_type == SHT_DYNSYM)
-		{	
-			Elf_Scn * scn = elf_getscn(_binary, section_ndx);
-			Elf_Data * data = elf_getdata(scn, nullptr);
+	GElf_Shdr * dynsym_shdr = nullptr, * versym_shdr = nullptr;
+	int dynsym_ndx = find_section(SHT_DYNSYM, dynsym_shdr);
+	int versym_ndx = find_section(SHT_GNU_versym, versym_shdr);
 
-			int ndx_sym = 0;
-			GElf_Sym sym;
-			while (gelf_getsym(data, ndx_sym, &sym) == &sym) {
-				const std::string & sym_name = elf_strptr(_binary, section.second.sh_link, sym.st_name);
-				if (sym_name == name1)
-				{
-					sym_ndx1 = ndx_sym;
-					std::memcpy(&sym1, &sym, sizeof(sym));
-				}
-				else if (sym_name == name2)
-				{
-					sym_ndx2 = ndx_sym;
-					std::memcpy(&sym2, &sym, sizeof(sym));
-				}
-				++ndx_sym;
-			}
+	Elf_Scn * dynsym_scn = elf_getscn(_binary, dynsym_ndx);
+	Elf_Data * dynsym_data = elf_getdata(dynsym_scn, nullptr);
 
-			gelf_update_sym(data, sym_ndx1, &sym2);
-			gelf_update_sym(data, sym_ndx2, &sym1);
-
-			elf_flagdata(data, ELF_C_SET, ELF_F_DIRTY);
-			elf_flagscn(scn, ELF_C_SET, ELF_F_DIRTY);
+	int ndx_sym = 0;
+	GElf_Sym sym;
+	while (gelf_getsym(dynsym_data, ndx_sym, &sym) == &sym) {
+		const std::string & sym_name = elf_strptr(_binary, dynsym_shdr->sh_link, sym.st_name);
+		if (sym_name == name1)
+		{
+			sym_ndx1 = ndx_sym;
+			std::memcpy(&sym1, &sym, sizeof(sym));
 		}
+		else if (sym_name == name2)
+		{
+			sym_ndx2 = ndx_sym;
+			std::memcpy(&sym2, &sym, sizeof(sym));
+		}
+		++ndx_sym;
 	}
+
+	//get symver
+	GElf_Versym versym1, versym2;
+	Elf_Scn * versym_scn = elf_getscn(_binary, versym_ndx);
+	Elf_Data * versym_data = elf_getdata(versym_scn, nullptr);
+	gelf_getversym(versym_data, sym_ndx1, &versym1);
+	gelf_getversym(versym_data, sym_ndx2, &versym2);
+
+	gelf_update_sym(dynsym_data, sym_ndx1, &sym2);
+	gelf_update_sym(dynsym_data, sym_ndx2, &sym1);
+
+	gelf_update_versym(versym_data, sym_ndx1, &versym2);
+	gelf_update_versym(versym_data, sym_ndx2, &versym1);
+
+	elf_flagdata(dynsym_data, ELF_C_SET, ELF_F_DIRTY);
+	elf_flagscn(dynsym_scn, ELF_C_SET, ELF_F_DIRTY);
+	elf_flagdata(versym_data, ELF_C_SET, ELF_F_DIRTY);
+	elf_flagscn(versym_scn, ELF_C_SET, ELF_F_DIRTY);
 }
 
 bool LibelfEditor::init(const char * elfname)
