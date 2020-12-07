@@ -1,21 +1,21 @@
-#SilverPatcher  
+# SilverPatcher  
 一款CTF AWD二进制防御补丁工具  
-##编译安装  
+## 编译安装  
 Ubuntu 16.04 x64，使用cmake编译：
 ```
 cmake .
 make
 ```
-##依赖组件  
-###CMake  
+## 依赖组件  
+### CMake  
 ```
 apt install cmake
 ```
-###libelf
+### libelf
 ```
 apt install libelf-dev
 ```
-###LIEF 0.10.1  
+### LIEF 0.10.1  
 https://github.com/lief-project/LIEF  
 下载源码，编译安装  
 ```
@@ -60,7 +60,7 @@ cd unicorn-1.0.2
 ./make.sh
 make install
 ```
-###keystone  
+### keystone  
 https://github.com/keystone-engine/keystone  
 下载源码，编译安装
 ```
@@ -71,7 +71,7 @@ cmake .
 make -j4
 make install
 ```
-###capstone  
+### capstone  
 https://github.com/aquynh/capstone  
 ```
 apt install libcapstone3 libcapstone-dev
@@ -83,7 +83,7 @@ tar xvf 4.0.2.tar.gz
 cd capstone-4.0.2
 ./make.sh
 ```
-###CJsonObject  
+### CJsonObject  
 https://github.com/Bwar/CJsonObject  
 这个工程稍微比较麻烦，因为开发者只提供了代码没有想发布链接库的意思，需要我们手工编译生成。
 ```
@@ -96,7 +96,7 @@ cp CJsonObject.hpp /usr/local/include
 cp cJSON.h /usr/local/include
 cp libCJsonObject.a /usr/local/lib
 ```
-##使用
+## 使用
 通过修改config.json配置文件，更新libc相关偏移量以及选择想要使用的策略。
 ```
 {
@@ -222,5 +222,5 @@ cp libCJsonObject.a /usr/local/lib
 }
 
 ```
-##Contact
+## Contact
 nu00string@gmail.com
