@@ -1,5 +1,5 @@
 # SilverPatcher  
-一款CTF AWD二进制防御补丁工具  
+一款CTF AWD二进制通用防御补丁工具，目前仅支持x32/x64。  
 ## 编译安装  
 Ubuntu 16.04 x64，使用cmake编译：
 ```
@@ -97,6 +97,7 @@ cp cJSON.h /usr/local/include
 cp libCJsonObject.a /usr/local/lib
 ```
 ## 使用
+<https://github.com/bigBestWay/SilverPatcher/wiki>  
 通过修改config.json配置文件，更新libc相关偏移量以及选择想要使用的策略。
 ```
 {
