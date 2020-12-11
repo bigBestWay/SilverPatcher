@@ -81,6 +81,7 @@ bool LibelfEditor::copy_file(const std::string & infile, const std::string & out
 
 	fwrite(content, filesize, 1, out);
 	fclose(out);
+	delete[] content;
 	return true;
 }
 
@@ -102,21 +103,6 @@ bool LibelfEditor::enable_nx()
 
 bool LibelfEditor::enable_bindnow()
 {
-	for (auto & segment : _segments)
-	{
-		GElf_Phdr & dyn_seg = segment.second;
-		if (dyn_seg.p_type == PT_DYNAMIC)
-		{
-			Elf_Data *data = elf_getdata_rawchunk(_binary, dyn_seg.p_offset, dyn_seg.p_filesz, ELF_T_DYN);
-			if (data == nullptr)
-			{
-				return false;
-			}
-
-			
-		}
-	}
-
 	for (auto & section : _sections)
 	{
 		int section_ndx = section.first;
