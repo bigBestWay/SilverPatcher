@@ -19,6 +19,5 @@ public:
 	virtual void do_patch() override;
 private:
 	void setProvider();
-	uint64_t findMainFunction()const;
 };
 

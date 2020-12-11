@@ -53,16 +53,3 @@ void MainInjectPolicy::setProvider()
 	}
 }
 
-/* 使用UNICORN 虚拟执行 */
-uint64_t MainInjectPolicy::findMainFunction()const
-{
-	uint64_t startAddr = BinaryEditor::instance()->entryPoint();
-	const std::vector<uint8_t> & funcCode = BinaryEditor::instance()->get_content(startAddr, 100);//100
-	cs_insn * insns = nullptr;
-	size_t count = CSEngine::instance()->disasm(funcCode, startAddr, &insns);
-	for (size_t i = 0; i < count; i++)
-	{
-		const cs_insn & insn = insns[i];
-		//const char movrdi[3] = {0x48,0xc7,0xc7};
-	}	
-}
