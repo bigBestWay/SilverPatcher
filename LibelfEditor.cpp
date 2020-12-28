@@ -313,6 +313,29 @@ void LibelfEditor::patch_address(uint64_t address, const std::vector<uint8_t> & 
 	}
 }
 
+std::vector<uint8_t> LibelfEditor::get_content_from_virtual_address(uint64_t address, uint64_t size)
+{
+	GElf_Shdr shdr;
+	int id = section_from_virtual_address(address, shdr);
+	std::vector<uint8_t> code;
+	if (id >= 0)
+	{
+		//std::cout << "SectionName=" << get_section_name(shdr) << " virtualAddr = " << std::hex << shdr.sh_addr << " size = " << shdr.sh_size << std::endl;
+		uint64_t offset = address - shdr.sh_addr;
+		if (size > shdr.sh_size - offset)
+		{
+			std::cerr << "read data out of section bound." << std::endl;
+			return code;
+		}
+
+		code.resize(size);
+		Elf_Scn * scn = elf_getscn(_binary, id);
+		Elf_Data * data = elf_getdata(scn, nullptr);
+		std::memcpy(code.data(), data->d_buf + offset, code.size());
+	}
+	return code;
+}
+
 void LibelfEditor::writeFile()
 {
 	elf_flagelf(_binary, ELF_C_SET, ELF_F_LAYOUT);

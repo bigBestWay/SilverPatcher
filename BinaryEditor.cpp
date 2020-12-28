@@ -319,6 +319,10 @@ bool BinaryEditor::getGOTSection(Section & section)
 
 std::vector<uint8_t> BinaryEditor::get_content(uint64_t address, uint64_t size)
 {
+	if (_mode == LIBELF_PATCH_MODE)
+	{
+		return LibelfEditor::get_content_from_virtual_address(address, size);
+	}
 	return _binary->get_content_from_virtual_address(address, size);
 }
 

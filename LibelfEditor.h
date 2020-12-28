@@ -8,6 +8,7 @@ class LibelfEditor
 public:
     static bool init(const char * filename);
     static void patch_address(uint64_t address, const std::vector<uint8_t> & code);
+    static std::vector<uint8_t> get_content_from_virtual_address(uint64_t address, uint64_t size);
     static void writeFile();
     static void abort();
     static bool copy_file(const std::string & infile, const std::string & outfile);
