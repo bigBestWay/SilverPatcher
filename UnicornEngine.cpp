@@ -2,7 +2,6 @@
 #include <unicorn/unicorn.h>
 #include "BinaryEditor.h"
 
-#define ADDRESS 0x1000000
 #define STACK_ADDR 0x8000000
 #define STACK_SIZE 1024 * 1024 /* 1M */
 

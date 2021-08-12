@@ -21,8 +21,14 @@ public:
 	}
 
 	int simulate_start(const std::vector<uint8_t> & code, uint64_t & main_addr);
+
+	uint64_t get_address()const
+	{
+		return ADDRESS;
+	}
 private:
 	static UnicornEngine * _instance;
+	const uint64_t ADDRESS = 0x1000000;
 	UnicornEngine();
 	~UnicornEngine();
 };

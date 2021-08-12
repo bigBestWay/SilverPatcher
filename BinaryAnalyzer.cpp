@@ -139,6 +139,7 @@ const BinaryAnalyzer::BasicBlock * BinaryAnalyzer::getSrcBlock(uint64_t block_ad
 uint64_t BinaryAnalyzer::getMainFunction()
 {
 	uint64_t entrypoint = BinaryEditor::instance()->entryPoint();
+	std::cout << "get entryPoint " << std::hex << entrypoint << std::endl;
 	const std::vector<uint8_t> & code = BinaryEditor::instance()->get_content(entrypoint, 0x1000);
 	cs_insn * tmpinsn = nullptr;
 	size_t n = CSEngine::instance()->disasm(code, entrypoint, &tmpinsn);
@@ -163,6 +164,11 @@ uint64_t BinaryAnalyzer::getMainFunction()
 	if (UnicornEngine::instance()->simulate_start(simulate_code, mainaddr) != 0)
 	{
 		std::cerr << "simulate_start fail.\n";
+	}
+
+	if(BinaryEditor::instance()->isPIE())
+	{
+		mainaddr -= UnicornEngine::instance()->get_address();
 	}
 
 	std::cout << "get main " << std::hex << mainaddr << std::endl;

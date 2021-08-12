@@ -320,12 +320,12 @@ std::vector<uint8_t> LibelfEditor::get_content_from_virtual_address(uint64_t add
 	std::vector<uint8_t> code;
 	if (id >= 0)
 	{
-		//std::cout << "SectionName=" << get_section_name(shdr) << " virtualAddr = " << std::hex << shdr.sh_addr << " size = " << shdr.sh_size << std::endl;
+		//std::cout << " virtualAddr = " << std::hex << shdr.sh_addr << " size = " << shdr.sh_size << std::endl;
 		uint64_t offset = address - shdr.sh_addr;
 		if (size > shdr.sh_size - offset)
 		{
-			std::cerr << "read data out of section bound." << std::endl;
-			return code;
+			//std::cerr << "read data out of section bound[" << std::hex << shdr.sh_addr << "," << shdr.sh_addr + shdr.sh_size << "]. size = " << size << std::endl;
+			size = shdr.sh_size - offset;
 		}
 
 		code.resize(size);
