@@ -191,7 +191,7 @@ cp libCJsonObject.a /usr/local/lib
             "password":"abcdefgh"
         },
         "Capture01CodeProvider":{
-            "comment":"fork子进程，抓取输入输出并保存到文件。",
+            "comment":"fork子进程，抓取输入输出并转发。",
             "enable":0,
             "forward_host":"192.168.50.50",
             "forward_port":56789
