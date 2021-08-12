@@ -89,7 +89,7 @@ cp libCJsonObject.a /usr/local/lib
 ## 使用
 <https://github.com/bigBestWay/SilverPatcher/wiki>  
 通过修改config.json配置文件，更新libc相关偏移量以及选择想要使用的策略。
-```
+```json
 {
     "policys":
         {
@@ -126,10 +126,10 @@ cp libCJsonObject.a /usr/local/lib
                 "level":"VERYHIGH",
                 "enable":0
             },
-            "MainInjectPolicy":{
-                "comment":"main函数开头代码注入，代码来自下文的CodeProvider",
+            "StartInjectPolicy":{
+                "comment":"start函数开头代码注入，代码来自下文的CodeProvider",
                 "level":"MEDIUM",
-                "enable":0
+                "enable":1
             },
             "FmtVulScanRepairPolicy":{
                 "comment":"该策略扫描格式串漏洞，如果配置了patch，则会打补丁。比如有指令0x40086c call printf存在格式化串漏洞，那么就在patch加一个元素：function=printf, callAddress=0x40086c",
@@ -167,7 +167,7 @@ cp libCJsonObject.a /usr/local/lib
             },
             "nopbinsh":{
                 "comment":"nop掉libc中的binsh字符串，使system/oneshot失效",
-                "enable":0
+                "enable":1
             }
         },
         "ClearBackdoorCodeProvider":{
@@ -176,14 +176,14 @@ cp libCJsonObject.a /usr/local/lib
         },
         "BindShellCodeProvider":{
             "comment":"fork子进程，提供bindtcp_shell，密码固定是8字节。",
-            "enable":0,
+            "enable":1,
             "port":56789,
             "password":"abcdefgh"
         },
         "Capture01CodeProvider":{
-            "comment":"fork子进程，抓取输入输出并转发。",
+            "comment":"fork子进程，抓取输入输出并保存到文件。",
             "enable":0,
-            "forward_host":"192.168.50.50",
+            "forward_host":"117.78.9.13",
             "forward_port":56789
         }
     },
@@ -211,7 +211,6 @@ cp libCJsonObject.a /usr/local/lib
         }
     }
 }
-
 ```
 ## Contact
 bigbestway@163.com
