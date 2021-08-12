@@ -1,7 +1,7 @@
 #include "BinaryAnalyzer.h"
 #include "CSEngine.h"
 #include "BinaryEditor.h"
-#include "UnicornEngine.h"
+#include "LibelfEditor.h"
 
 BinaryAnalyzer::BasicBlock * BinaryAnalyzer::get_block(uint64_t address, bool new_not_found)
 {
@@ -134,45 +134,5 @@ bool BinaryAnalyzer::getReturnBlock(std::list<const cs_insn *> & insns)const
 const BinaryAnalyzer::BasicBlock * BinaryAnalyzer::getSrcBlock(uint64_t block_address)
 {
 	return nullptr;
-}
-
-uint64_t BinaryAnalyzer::getMainFunction()
-{
-	uint64_t entrypoint = BinaryEditor::instance()->entryPoint();
-	std::cout << "get entryPoint " << std::hex << entrypoint << std::endl;
-	const std::vector<uint8_t> & code = BinaryEditor::instance()->get_content(entrypoint, 0x1000);
-	cs_insn * tmpinsn = nullptr;
-	size_t n = CSEngine::instance()->disasm(code, entrypoint, &tmpinsn);
-
-	std::vector<uint8_t> simulate_code;
-	size_t i = 0;
-	for (; i < n; ++i)
-	{
-		const cs_insn & insn = tmpinsn[i];
-		//CSEngine::instance()->disasmShow(insn);
-		//start里就一个call函数
-		if (insn.id == X86_INS_CALL)
-		{
-			break;
-		}
-		simulate_code.insert(simulate_code.end(), insn.bytes, insn.bytes + insn.size);
-	}
-
-	cs_free(tmpinsn, n);
-
-	uint64_t mainaddr = 0;
-	if (UnicornEngine::instance()->simulate_start(simulate_code, mainaddr) != 0)
-	{
-		std::cerr << "simulate_start fail.\n";
-	}
-
-	if(BinaryEditor::instance()->isPIE())
-	{
-		mainaddr -= UnicornEngine::instance()->get_address();
-	}
-
-	std::cout << "get main " << std::hex << mainaddr << std::endl;
-
-	return mainaddr;
 }
 

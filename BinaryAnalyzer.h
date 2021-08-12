@@ -22,8 +22,6 @@ public:
 
 	const BasicBlock * getSrcBlock(uint64_t block_address);
 
-	static uint64_t getMainFunction();
-
 	bool getReturnBlock(std::list<const cs_insn *> & insns)const;
 
 private:

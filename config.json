@@ -34,10 +34,10 @@
                 "level":"VERYHIGH",
                 "enable":0
             },
-            "MainInjectPolicy":{
-                "comment":"main函数开头代码注入，代码来自下文的CodeProvider",
+            "StartInjectPolicy":{
+                "comment":"start函数开头代码注入，代码来自下文的CodeProvider",
                 "level":"MEDIUM",
-                "enable":0
+                "enable":1
             },
             "FmtVulScanRepairPolicy":{
                 "comment":"该策略扫描格式串漏洞，如果配置了patch，则会打补丁。比如有指令0x40086c call printf存在格式化串漏洞，那么就在patch加一个元素：function=printf, callAddress=0x40086c",
@@ -75,7 +75,7 @@
             },
             "nopbinsh":{
                 "comment":"nop掉libc中的binsh字符串，使system/oneshot失效",
-                "enable":0
+                "enable":1
             }
         },
         "ClearBackdoorCodeProvider":{
@@ -84,7 +84,7 @@
         },
         "BindShellCodeProvider":{
             "comment":"fork子进程，提供bindtcp_shell，密码固定是8字节。",
-            "enable":0,
+            "enable":1,
             "port":56789,
             "password":"abcdefgh"
         },

@@ -282,26 +282,6 @@ void InstrumentManager::insertCodeAtBegin_i(const cs_insn * insns, size_t count,
 	uint64_t jmpBackAddr = 0;
 	uint64_t offset = 0;
 
-
-	//先插一条指令，获取栈顶到RAX
-	{
-		std::string get_ret_insn;
-		if (isX32)
-		{
-			get_ret_insn = "mov eax,[esp]";
-		}
-		else
-		{
-			get_ret_insn = "mov rax,[rsp]";
-		}
-
-		std::vector<uint8_t> get_ret_code;
-		KSEngine::instance()->assemble(get_ret_insn.c_str(), cave->virtual_addr, get_ret_code);
-		dstCode.insert(dstCode.end(), get_ret_code.begin(), get_ret_code.end());
-		offset += get_ret_code.size();
-	}
-
-
 	{
 		//该跳转指令需要占用原来几条指令的空间？
 		std::string insnsToMove;
@@ -331,7 +311,7 @@ void InstrumentManager::insertCodeAtBegin_i(const cs_insn * insns, size_t count,
 		jmpBackAddr = functionBeginAddr + moveInsnBytes;
 		dstCode.insert(dstCode.end(), insnsToMoveCodeNew.begin(), insnsToMoveCodeNew.end());
 	}
-		
+	
 	//设置返回地址，模拟call, 32/64代码完全一样
 	if (BinaryEditor::instance()->isPIE())
 	{
@@ -379,7 +359,7 @@ void InstrumentManager::insertCodeAtBegin_i(const cs_insn * insns, size_t count,
 		offset += pushRet.size();
 		dstCode.insert(dstCode.end(), pushRet.begin(), pushRet.end());
 	}
-	
+
 	//保存寄存器
 	if (isX32)
 	{
@@ -397,7 +377,7 @@ void InstrumentManager::insertCodeAtBegin_i(const cs_insn * insns, size_t count,
 		dstCode.insert(dstCode.end(), pushallREG.begin(), pushallREG.end());
 		offset += pushallREG.size();
 	}
-
+	
 	//调用provider接口，获取载荷代码
 	for (auto provider : _codeProviders)
 	{
@@ -432,7 +412,6 @@ void InstrumentManager::insertCodeAtBegin_i(const cs_insn * insns, size_t count,
 		//pop r9 r8 rdi rsi rbp rsp rbx rdx rcx rax ret
 		std::vector<uint8_t> popallREG = {
 			0x41 ,0x59 ,0x41 ,0x58 ,0x5f ,0x5e ,0x5d ,0x5c ,0x5b,0x5a,0x59 ,0x58, 
-			//0x48, 0x31,0xed, //xor rbp,rbp
 			0xC3
 		};
 

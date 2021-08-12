@@ -34,10 +34,14 @@ public:
 		_instance = nullptr;
 	}
 
-	static void set_pathmode(PatchMode mode)
+	static void set_patchmode(PatchMode mode)
 	{
 		_mode = mode;
 	}
+
+	uint64_t imagebase()const;
+
+	uint64_t original_size()const;
 
 	bool init(const std::string & elfname);
 
@@ -85,10 +89,7 @@ public:
 		return _binary->is_pie();
 	}
 
-	uint64_t entryPoint()const
-	{
-		return _binary->entrypoint();
-	}
+	uint64_t entryPoint()const;
 
 	CodeCave * addSection(size_t size = 4096);
 

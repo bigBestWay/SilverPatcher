@@ -348,3 +348,10 @@ void LibelfEditor::abort()
 {
     close(_fd);
 }
+
+uint64_t LibelfEditor::entryPoint()
+{
+	GElf_Ehdr ehdr;
+	gelf_getehdr(_binary, &ehdr);
+	return ehdr.e_entry;
+}

@@ -28,7 +28,7 @@
 #include "DisableFreePolicy.h"
 #include "FmtVulScanRepairPolicy.h"
 #include "RandomPLTGOTPolicy.h"
-#include "MainInjectPolicy.h"
+#include "StartInjectPolicy.h"
 
 static std::vector<PatchPolicy *> s_policys;
 
@@ -47,9 +47,9 @@ static void loadPolicys()
 	{
 		s_policys.push_back(new RandomPLTGOTPolicy());
 	}
-	if (Config::instance()->isPolicyEnabled(MainInjectPolicy::name()))
+	if (Config::instance()->isPolicyEnabled(StartInjectPolicy::name()))
 	{
-		s_policys.push_back(new MainInjectPolicy());
+		s_policys.push_back(new StartInjectPolicy());
 	}
 	if (Config::instance()->isPolicyEnabled(setRPathPolicy::name()))
 	{
@@ -159,7 +159,7 @@ int main(int argc, char *argv[]) {
 		std::cout << BROWN "============================" << std::endl << "Restart, use LIEF...\n";
 		std::cout << "============================\n" NONE << std::endl;
 		BinaryEditor::destroy();
-		BinaryEditor::set_pathmode(BinaryEditor::LIEF_PATCH_MODE);
+		BinaryEditor::set_patchmode(BinaryEditor::LIEF_PATCH_MODE);
 		do_patch(argv[1], configName);
 	}
 

@@ -50,16 +50,6 @@ cmake .
 make -j4
 make install
 ```
-### unicorn
-https://github.com/unicorn-engine/unicorn  
-下载源码，编译安装
-```
-wget https://github.com/unicorn-engine/unicorn/archive/1.0.2.tar.gz
-tar xvf 1.0.2.tar.gz
-cd unicorn-1.0.2
-./make.sh
-make install
-```
 ### keystone  
 https://github.com/keystone-engine/keystone  
 下载源码，编译安装
@@ -224,4 +214,4 @@ cp libCJsonObject.a /usr/local/lib
 
 ```
 ## Contact
-nu00string@gmail.com
+bigbestway@163.com

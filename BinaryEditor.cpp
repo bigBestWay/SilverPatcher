@@ -375,3 +375,21 @@ uint64_t BinaryEditor::getGotSlotValue(uint64_t address)
 	}
 }
 
+uint64_t BinaryEditor::original_size()const
+{
+	return _binary->original_size();
+}
+
+uint64_t BinaryEditor::imagebase()const
+{
+	return _binary->imagebase();
+}
+
+uint64_t BinaryEditor::entryPoint()const
+{
+	if (_mode == LIBELF_PATCH_MODE)
+	{
+		return LibelfEditor::entryPoint();
+	}
+	return _binary->entrypoint();
+}
