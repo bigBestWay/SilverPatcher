@@ -196,8 +196,7 @@ cp libCJsonObject.a /usr/local/lib
             "free":"0x40c620",
             "_IO_2_1_stdout_":"0x3ec760",
             "tcache_count":"0x3eb2e0",
-            "str_bin_sh":"0x18CE17",
-            "libccall_main_ret_offset":"0x20840"
+            "str_bin_sh":"0x18CE17"
         },
         "x32":{
             "global_max_fast":"0x1d9904",
@@ -206,8 +205,7 @@ cp libCJsonObject.a /usr/local/lib
             "free":"0x206940",
             "_IO_2_1_stdout_":"0x1d8d80",
             "tcache_count":"0x1d8158",
-            "str_bin_sh":"",
-            "libccall_main_ret_offset":""
+            "str_bin_sh":""
         }
     }
 }
